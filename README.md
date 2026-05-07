@@ -55,9 +55,9 @@ cd ../../..
 
 8. Запустите полный сценарий настройки:
 
-   ```bash
-   ansible-playbook -i hosts raspberry_brover.yml
-   ```
+```bash
+ansible-playbook -i hosts raspberry_brover.yml
+```
 Процесс займёт 40–60 минут. После успешного завершения робот будет готов к работе.
 
 ## Подготовка чистого образа для пользователей
