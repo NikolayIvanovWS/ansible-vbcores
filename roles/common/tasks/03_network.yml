@@ -1,0 +1,13 @@
+---
+- name: Copy netplan files
+  become: yes
+  ansible.builtin.copy:
+    dest: "/etc/netplan/{{ item }}"
+    src: "{{ item }}"
+    owner: root
+    group: root
+    mode: '0600'
+  with_items:
+    - "10-network-eth.yaml"
+    - "20-network-wifi.yaml"
+    - "50-cloud-init.yaml"

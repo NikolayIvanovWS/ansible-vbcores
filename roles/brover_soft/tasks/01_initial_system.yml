@@ -1,0 +1,50 @@
+---
+- name: Install ROS and system dependencies for brover_soft
+  become: true
+  ansible.builtin.apt:
+    name:
+      - ros-jazzy-joy
+      - python3-pydantic
+      - libhidapi-dev
+      - libboost-all-dev
+      - ros-jazzy-tf-transformations
+      - ros-jazzy-usb-cam
+      - ros-jazzy-rosbridge-server
+      - python3-flask
+      - ros-jazzy-web-video-server
+    state: present
+    update_cache: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Set hostname to brover01
+  ansible.builtin.hostname:
+    name: brover01
+    use: systemd
+  become: true
+
+- name: Update /etc/hosts with new hostname
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s+.*'
+    line: '127.0.1.1 brover01'
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+
+- name: Add IMAGE_VERSION to /etc/os-release
+  ansible.builtin.lineinfile:
+    path: /etc/os-release
+    line: 'IMAGE_VERSION="{{ image_version }}"'
+    state: present
+  become: true
+
+- name: Replace /boot/firmware/config.txt
+  ansible.builtin.copy:
+    src: config.txt
+    dest: /boot/firmware/config.txt
+    owner: root
+    group: root
+    mode: '0755'
+  become: true

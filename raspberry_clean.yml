@@ -1,0 +1,6 @@
+---
+- hosts: clean
+  roles:
+  - role: clean
+    tags: [clean]
+    

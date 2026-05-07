@@ -1,0 +1,77 @@
+- name: Install dnsmasq
+  ansible.builtin.apt:
+    name: dnsmasq
+    state: present
+    update_cache: true
+
+- name: Stop and disable default dnsmasq service
+  ansible.builtin.systemd:
+    name: dnsmasq
+    state: stopped
+    enabled: false
+    masked: true
+
+
+# - name: Deploy netplan configuration
+#   ansible.builtin.template:
+#     src: 01-eth0.yaml.j2
+#     dest: /etc/netplan/01-eth0.yaml
+#     owner: root
+#     group: root
+#     mode: "0600"
+#   notify: netplan apply
+
+- name: Deploy dnsmasq fallback configuration
+  ansible.builtin.template:
+    src: dhcp-fallback.conf.j2
+    dest: /etc/dnsmasq-fallback.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart dnsmasq-fallback
+
+- name: Deploy network fallback monitoring script
+  ansible.builtin.template:
+    src: network-fallback.sh.j2
+    dest: /usr/local/bin/network-fallback.sh
+    owner: root
+    group: root
+    mode: "0755"
+  notify: restart network-fallback
+
+- name: Deploy dnsmasq-fallback systemd unit
+  ansible.builtin.copy:
+    src: dnsmasq-fallback.service
+    dest: /etc/systemd/system/dnsmasq-fallback.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: systemd daemon-reload
+
+- name: Deploy network-fallback systemd unit
+  ansible.builtin.copy:
+    src: network-fallback.service
+    dest: /etc/systemd/system/network-fallback.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: systemd daemon-reload
+
+- name: Flush handlers to apply daemon-reload before enabling services
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start network-fallback service
+  ansible.builtin.systemd:
+    name: network-fallback
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Flush filesystem buffers
+  ansible.builtin.command: sync
+  become: true
+
+- name: Reboot host
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+  become: true

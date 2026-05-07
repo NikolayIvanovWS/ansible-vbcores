@@ -1,0 +1,90 @@
+---
+- name: Install required apt packages
+  become: true
+  ansible.builtin.apt:
+    name:
+      - curl
+      - wget
+      - apt-transport-https
+    state: present
+    update_cache: true
+
+- name: Copy code-server arm64 deb package
+  ansible.builtin.copy:
+    src: code-server_4.117.0_arm64.deb
+    dest: /tmp/code-server_4.117.0_arm64.deb
+    mode: '0644'
+
+- name: Install code-server from local deb
+  become: true
+  ansible.builtin.shell: |
+    dpkg -i /tmp/code-server_4.117.0_arm64.deb || true
+    apt-get install -f -y
+  changed_when: false
+
+- name: Check code-server version
+  ansible.builtin.command: code-server --version
+  register: code_server_version
+  changed_when: false
+
+- name: Ensure code-server config directory exists
+  ansible.builtin.file:
+    path: /home/pi/.config/code-server
+    state: directory
+    mode: '0755'
+    owner: pi
+    group: pi
+
+- name: Copy code-server config.yaml
+  ansible.builtin.copy:
+    src: config.yaml
+    dest: /home/pi/.config/code-server/config.yaml
+    mode: '0644'
+    owner: pi
+    group: pi
+
+- name: Enable and start code-server service for user pi
+  become: true
+  ansible.builtin.systemd:
+    name: code-server@pi
+    enabled: true
+    state: started
+
+- name: Allow code-server port in UFW
+  become: true
+  community.general.ufw:
+    rule: allow
+    port: '8090'
+    proto: tcp
+
+- name: Install Python extension via code-server CLI
+  ansible.builtin.command: code-server --install-extension ms-python.python
+  become: true
+  become_user: pi
+  args:
+    creates: /home/pi/.local/share/code-server/extensions/ms-python.python
+
+- name: Ensure code-server User settings directory exists
+  ansible.builtin.file:
+    path: /home/pi/.local/share/code-server/User
+    state: directory
+    mode: '0755'
+    owner: pi
+    group: pi
+
+- name: Copy VS Code settings.json
+  ansible.builtin.copy:
+    src: settings.json
+    dest: /home/pi/.local/share/code-server/User/settings.json
+    mode: '0644'
+    owner: pi
+    group: pi
+
+- name: Flush filesystem buffers
+  ansible.builtin.command: sync
+  become: true
+
+- name: Reboot host
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+  become: true

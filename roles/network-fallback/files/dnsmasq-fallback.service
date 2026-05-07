@@ -1,0 +1,14 @@
+[Unit]
+Description=dnsmasq DHCP Server (Fallback Mode)
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/sbin/dnsmasq --conf-file=/etc/dnsmasq-fallback.conf --pid-file=/run/dnsmasq-fallback.pid
+ExecStop=/bin/kill -TERM $MAINPID
+PIDFile=/run/dnsmasq-fallback.pid
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

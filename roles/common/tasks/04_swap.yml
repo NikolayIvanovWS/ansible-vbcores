@@ -1,0 +1,59 @@
+- name: Check whether "/swapfile" exists
+  register: idCheckSwap
+  stat:
+    path: /swapfile
+
+- name: Create Swap if not exist
+  block:
+
+    - name: Allocate the swap file
+      shell: fallocate -l {{ swap_vars.size }} /swapfile
+
+    - name: Change permission of the swap file
+      file:
+        path: /swapfile
+        mode: 0600
+        
+    - name: Create a swap area on the swap file
+      shell: mkswap /swapfile
+
+    - name: Activate the swap file as a swap memory
+      shell: swapon /swapfile
+
+    - name: Append configuration in /etc/fstab
+      shell: echo "\n/swapfile swap swap defaults 0 0\n" >> /etc/fstab
+
+    - name: Set swappiness level
+      shell: sysctl vm.swappiness={{ swap_vars.swappiness }}
+
+    - name: Append configuration in /etc/sysctl.conf
+      shell: echo "\nvm.swappiness={{ swap_vars.swappiness }}\n" >> /etc/sysctl.conf
+
+  when: idCheckSwap.stat.exists == false
+
+- name: Make scripts dir
+  ansible.builtin.file:
+    path: /home/pi/extra/scripts
+    state: directory
+    mode: 0755
+  become_user: pi    
+  become: true
+
+
+- name: Copy swap_on.sh script
+  ansible.builtin.copy:
+    src: "scripts/swap_on.sh"
+    dest: "/home/pi/extra/scripts/swap_on.sh"
+    mode: '0755'  
+    owner: pi
+    group: pi  
+  become: true 
+
+- name: Copy swap_off.sh script
+  ansible.builtin.copy:
+    src: "scripts/swap_off.sh"
+    dest: "/home/pi/extra/scripts/swap_off.sh"
+    mode: '0755'  
+    owner: pi
+    group: pi  
+  become: true   

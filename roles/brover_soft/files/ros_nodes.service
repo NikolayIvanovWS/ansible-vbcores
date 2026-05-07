@@ -1,0 +1,14 @@
+[Unit]
+Description=Autostart ROS 2 Nodes
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/usr/local/bin/start_ros_nodes.sh
+Restart=on-failure
+StandardOutput=append:/var/log/ros_nodes.log
+StandardError=append:/var/log/ros_nodes.err
+
+[Install]
+WantedBy=multi-user.target

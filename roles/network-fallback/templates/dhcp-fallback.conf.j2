@@ -1,0 +1,5 @@
+interface={{ network_fallback_interface }}
+bind-interfaces
+dhcp-range={{ network_fallback_dhcp_range_start }},{{ network_fallback_dhcp_range_end }},{{ network_fallback_netmask }},{{ network_fallback_lease_time }}
+# Disable DNS, only DHCP
+port=0

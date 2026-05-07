@@ -1,0 +1,112 @@
+---
+- name: Ensure a locale exists
+  community.general.locale_gen:
+    name: en_US.UTF-8
+    state: present
+
+- name: Set timezone to Europe/Moscow
+  timezone:
+    name: Europe/Moscow 
+
+- name: Change pi password
+  ansible.builtin.user:
+    name: pi
+    update_password: always
+    password: "{{ pi_password }}"
+    generate_ssh_key: yes
+
+- name: Update and upgrade apt packages
+  become: true
+  ansible.builtin.apt:
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 86400 #One day    
+      
+- name: Install common apt package
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "wget"
+    - "git"
+    - "rsync"
+    - "python3-pip"
+    - "wireless-tools"    
+    - "daemontools"
+    - "vnstat"
+    - "util-linux-extra"
+    - "wavemon"
+    - "net-tools"
+
+- name: Set a hostname 
+  ansible.builtin.hostname:
+    name: "{{inventory_hostname}}"
+    use: systemd         
+
+- name: Update hostname /etc/hosts
+  ansible.builtin.template:
+    src: hosts.j2
+    dest: /etc/hosts
+    mode: 0644  
+    owner: root
+    group: root    
+  become: true    
+
+- name: Make scripts dir
+  ansible.builtin.file:
+    path: /home/pi/extra/scripts
+    state: directory
+    mode: 0755
+  become_user: pi    
+  become: true
+
+- name: Copy expand_sd_card.sh script
+  ansible.builtin.copy:
+    src: "scripts/expand_sd_card.sh"
+    dest: "/home/pi/extra/scripts/expand_sd_card.sh"
+    mode: '0755'  
+    owner: pi
+    group: pi  
+  become: true 
+
+- name: Copy power_report.sh script
+  ansible.builtin.copy:
+    src: "scripts/power_report.sh"
+    dest: "/home/pi/extra/scripts/power_report.sh"
+    mode: '0755'  
+    owner: pi
+    group: pi  
+  become: true   
+
+- name: Copy firstboot.sh script
+  ansible.builtin.copy:
+    src: "scripts/firstboot.sh"
+    dest: "/boot/firmware/firstboot.sh" 
+    owner: root
+    group: root
+    mode: '0755'
+  become: true     
+   
+- name: Copy firstboot Services
+  ansible.builtin.copy:
+    src: systemd/firstboot.service
+    dest: /lib/systemd/system/  
+    owner: root
+    group: root
+    mode: '0644'
+  become: true        
+
+- name: Enable firstboot services
+  ansible.builtin.systemd:
+    name: firstboot
+    state: started
+    enabled: yes
+  become: true      
+
+- name: Copy change_hostname.sh to pi home directory
+  copy:
+    src: change_hostname.sh
+    dest: /home/pi/change_hostname.sh
+    owner: pi
+    group: pi
+    mode: '0755'

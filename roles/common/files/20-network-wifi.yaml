@@ -1,0 +1,18 @@
+network:
+  version: 2
+  wifis:
+    renderer: networkd
+    wlan0:
+      dhcp4: true
+      optional: true
+      access-points:
+        Aespen_2:
+          password: 541a6d0759e7bebc027240dbfdb09b6a40a5781d4411dfcbef877695abd8ac7d
+        Aespen_5:
+          password: 9f6460e73f216afd3e1f1db7166dee7c155a327230871309e6519d688df8cfdf
+        TurtleBro:
+          password: cdf5ddb6e2702e358cd5f90f69f5f9555a0906a178923f040ccdda04c88a33df
+        TurtleBro5G:
+          password: 48b985767899d1a366f4bbf31309d123afa6a77d6eb1705b9b73aa2cc35c9d47
+        Polygon5G:
+          password: 4b5382a69ed19ae3c0dc05b212b787f3fd9dbb2d8ae68b7c41890d5719ba3716

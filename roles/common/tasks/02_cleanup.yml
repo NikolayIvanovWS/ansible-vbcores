@@ -1,0 +1,51 @@
+---
+- name: Disable auto updates
+  block:
+  - name: Change 20auto-upgrades
+    ansible.builtin.copy:
+      src: apt/20auto-upgrades.conf
+      dest: /etc/apt/apt.conf.d/20auto-upgrades
+      mode: 0644  
+    become: true  
+  - name: Change 10periodic
+    ansible.builtin.copy:
+      src: apt/10periodic.conf
+      dest: /etc/apt/apt.conf.d/10periodic
+      mode: 0644  
+    become: true   
+
+- name: Remove apt apps
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: absent    
+    autoclean: true   
+  with_items:
+    - "snapd"   
+    - "cloud-init"
+  
+- name: Delete not needed dirs
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: "absent"
+  with_items:
+     - /etc/cloud/
+     - /var/lib/cloud/    
+
+- name: Get linux-modules packages
+  ansible.builtin.shell: dpkg-query --show 'linux-modules-*' | cut -f1 | grep -v "$(uname -r)"
+  register: linux_modules
+  ignore_errors: True
+
+- name: Remove linux-modules-*
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: absent    
+    autoclean: true   
+    purge: true
+  with_items: "{{linux_modules.stdout_lines}}"     
+
+- name: Remove dependencies that are no longer required and purge their configuration files
+  ansible.builtin.apt:
+    autoremove: yes
+    purge: true     
+

@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+IFACE="{{ network_fallback_interface }}"
+FALLBACK_IP="{{ network_fallback_ip }}/{{ network_fallback_cidr }}"
+FALLBACK_ADDR="{{ network_fallback_ip }}"
+DHCP_WAIT_SECONDS={{ network_fallback_dhcp_wait }}
+POLL_INTERVAL={{ network_fallback_poll_interval }}
+DNSMASQ_SERVICE="dnsmasq-fallback"
+
+FALLBACK_ACTIVE=false
+DEPENDENT_SERVICES="fastdds"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
+
+cable_connected() {
+    local carrier
+    carrier=$(cat "/sys/class/net/${IFACE}/carrier" 2>/dev/null) || true
+    [[ "$carrier" == "1" ]]
+}
+
+has_dhcp_ip() {
+    local addrs
+    addrs=$(ip -4 addr show dev "$IFACE" 2>/dev/null | grep -oP 'inet \K[0-9.]+')
+    for addr in $addrs; do
+        if [[ "$addr" != "$FALLBACK_ADDR" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+restart_dependent_services() {
+    for svc in $DEPENDENT_SERVICES; do
+        if systemctl is-active --quiet "$svc" 2>/dev/null; then
+            log "Restarting dependent service: ${svc}"
+            systemctl restart "$svc" 2>/dev/null || true
+        fi
+    done
+}
+
+enable_fallback() {
+    if $FALLBACK_ACTIVE; then
+        return
+    fi
+    log "DHCP not received. Enabling fallback mode on ${IFACE} with ${FALLBACK_IP}"
+    ip addr add "$FALLBACK_IP" dev "$IFACE" 2>/dev/null || true
+    systemctl start "$DNSMASQ_SERVICE" 2>/dev/null || true
+    FALLBACK_ACTIVE=true
+    log "Fallback DHCP server started"
+    restart_dependent_services
+}
+
+disable_fallback() {
+    if ! $FALLBACK_ACTIVE; then
+        return
+    fi
+    log "Disabling fallback mode"
+    systemctl stop "$DNSMASQ_SERVICE" 2>/dev/null || true
+    ip addr del "$FALLBACK_IP" dev "$IFACE" 2>/dev/null || true
+    FALLBACK_ACTIVE=false
+    log "Fallback DHCP server stopped"
+    restart_dependent_services
+}
+
+wait_for_dhcp() {
+    log "Cable detected on ${IFACE}. Waiting up to ${DHCP_WAIT_SECONDS}s for DHCP..."
+    local elapsed=0
+    while (( elapsed < DHCP_WAIT_SECONDS )); do
+        if has_dhcp_ip; then
+            log "DHCP address received"
+            return 0
+        fi
+        sleep 1
+        (( elapsed++ ))
+    done
+    log "DHCP timeout after ${DHCP_WAIT_SECONDS}s"
+    return 1
+}
+
+cleanup() {
+    log "Shutting down network-fallback monitor"
+    disable_fallback
+    exit 0
+}
+
+trap cleanup SIGTERM SIGINT
+
+log "Network fallback monitor started for ${IFACE}"
+
+PREV_CABLE=false
+
+while true; do
+    if cable_connected; then
+        if ! $PREV_CABLE; then
+            log "Cable plugged in"
+            PREV_CABLE=true
+
+            if has_dhcp_ip; then
+                log "Already have a DHCP address"
+                disable_fallback
+            elif wait_for_dhcp; then
+                disable_fallback
+            else
+                enable_fallback
+            fi
+        else
+            if $FALLBACK_ACTIVE && has_dhcp_ip; then
+                log "DHCP address appeared while in fallback mode"
+                disable_fallback
+            fi
+        fi
+    else
+        if $PREV_CABLE; then
+            log "Cable unplugged"
+            PREV_CABLE=false
+            disable_fallback
+        fi
+    fi
+
+    sleep "$POLL_INTERVAL"
+done

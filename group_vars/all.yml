@@ -1,0 +1,24 @@
+# ansible_python_interpreter: /usr/bin/python3
+# ---
+
+rosname: "jazzy"
+ubuntu_name: "noble"
+
+image_version: "broverOS_v2.5"
+
+swap_vars:
+  size: 1G
+  swappiness: 20
+
+# Common settings
+pi_password: $6$46pUZYmV6Xwcdk1F$PbtR566Vu/QISUpNt4PNOYwkD8LUYCyr5Lyjbquwl5LvXDr56OZyiR001Q1g8kC1KofIOuVk1qOd1iRjqvDoA/
+
+clear_dirs:
+  - "/home/pi/.ros/log"
+  - "/home/pi/.ansible"
+  - "/home/pi/.cache"
+  - "/home/pi/ros2_ws/build"     
+
+clear_colcon_dirs:
+  - "/home/pi/ros2_ws/log"
+

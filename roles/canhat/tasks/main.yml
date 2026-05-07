@@ -1,0 +1,4 @@
+---
+- include_tasks: 01_canhat.yml
+- include_tasks: 02_yakut.yml
+- include_tasks: 03_reboot.yml

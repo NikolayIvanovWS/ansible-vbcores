@@ -1,0 +1,63 @@
+- name: Copy .ros_params
+  become: yes
+  ansible.builtin.copy:
+    src: ".ros_params"
+    dest: "/home/pi/.ros_params"
+    mode: '0644'
+  become_user: pi    
+
+- name: Update .bashrc for .ros_params
+  lineinfile:
+    dest: /home/pi/.bashrc
+    line: source /home/pi/.ros_params     
+
+- name: Ensure .ros directory exists
+  ansible.builtin.file:
+    path: /home/pi/.ros
+    state: directory
+    owner: pi
+    group: pi
+    mode: '0755'
+  
+- name: Copy default fastdds_superclient.xml 
+  ansible.builtin.copy:
+    src: "fastdds_superclient.xml"
+    dest: /home/pi/.ros/fastdds_superclient.xml
+    owner: pi
+    group: pi
+    mode: '0644'
+  become_user: pi  
+
+- name: Copy fastdds Services
+  ansible.builtin.copy:
+    src: "fastdds.service"
+    dest: /lib/systemd/system/  
+    owner: root
+    group: root
+    mode: '0644' 
+  become: true  
+
+- name: Copy /etc/sysctl.d/20-fast-dds.conf
+  ansible.builtin.copy:
+    src: "20-fast-dds.conf"
+    dest: /etc/sysctl.d/  
+    owner: root
+    group: root
+    mode: '0644' 
+  become: true  
+
+- name: Copy fastdds-start Services
+  ansible.builtin.copy:
+    src: "fastdds-start"
+    dest: /home/pi/.ros
+    owner: pi
+    group: pi
+    mode: '0755' 
+  become_user: pi       
+
+- name: Enable and fastdds server service
+  ansible.builtin.systemd:
+    name: fastdds
+    state: started
+    enabled: yes
+  become: true     

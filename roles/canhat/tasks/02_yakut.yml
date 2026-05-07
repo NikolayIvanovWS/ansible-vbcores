@@ -1,0 +1,149 @@
+---
+- name: Fix dependency hell using aptitude
+  become: true
+  block:
+    - name: Install aptitude
+      ansible.builtin.apt:
+        name: aptitude
+        state: present
+        update_cache: yes
+
+    - name: Install common packages using aptitude
+      # Aptitude сам предложит и применит решение по обновлению конфликтующих либ
+      ansible.builtin.shell: |
+        aptitude install -y \
+          python3-jsonnet \
+          python3-psutil \
+          libsdl2-dev \
+          libasound2-dev \
+          libjack-dev \
+          can-utils \
+          jq \
+          unzip
+      register: aptitude_result
+      changed_when: "'Installing' in aptitude_result.stdout"
+
+- name: Install pip dependencies for CAN hat
+  ansible.builtin.pip:
+    name: 
+      - "yakut"
+      - "pycyphal[dsdl]"
+    state: present
+    extra_args: "--break-system-packages"
+  become: true
+  become_user: pi
+
+
+- name: Update .bashrc for /home/pi/.local/bin path
+  lineinfile:
+     dest: /home/pi/.bashrc
+     line: export PATH=$PATH:/home/pi/.local/bin
+
+- name: Copy .yakut_params
+  ansible.builtin.copy:
+    src: .yakut_params
+    dest: /home/pi/.yakut_params
+    mode: 0644
+    owner: pi
+    group: pi    
+  become: true
+
+- name: Update .bashrc for .yakut
+  lineinfile:
+     dest: /home/pi/.bashrc
+     line: source /home/pi/.yakut_params
+
+
+- name: Create .pycyphal dir
+  file:
+    path: /home/pi/.pycyphal
+    state: directory
+    mode: 0755  
+  become: true
+  become_user: pi
+
+- name: Install Nunavut and dependencies
+  ansible.builtin.pip:
+    name: ["nunavut[py]", "pydsdl"]
+    state: present
+    extra_args: --break-system-packages
+  become: true
+  become_user: pi
+
+- name: Download OpenCyphal regulated data types
+  ansible.builtin.unarchive:
+    src: https://github.com/OpenCyphal/public_regulated_data_types/archive/refs/heads/master.zip
+    dest: /home/pi/.pycyphal
+    remote_src: yes
+    creates: /home/pi/.pycyphal/public_regulated_data_types-master/uavcan
+  become: true
+  become_user: pi
+
+- name: Download Voltbro custom data types
+  ansible.builtin.unarchive:
+    src: https://github.com/voltbro/cyphal-types/archive/refs/heads/master.zip
+    dest: /home/pi/.pycyphal
+    remote_src: yes
+    creates: /home/pi/.pycyphal/cyphal-types-master/voltbro
+  become: true
+  become_user: pi
+
+- name: Remove redundant data types from Voltbro folder
+  ansible.builtin.file:
+    path: /home/pi/.pycyphal/cyphal-types-master/public_regulated_data_types
+    state: absent
+  become: true
+  become_user: pi
+
+- name: Generate Cyphal Python types (Standard + Voltbro)
+  ansible.builtin.shell:
+    chdir: /home/pi/.pycyphal
+    cmd: |
+      # 1. Компилируем базовые типы uavcan
+      python3 -m nunavut \
+        --target-language py \
+        --outdir . \
+        public_regulated_data_types-master/uavcan
+
+      # 2. Компилируем типы reg (зависят от uavcan)
+      python3 -m nunavut \
+        --target-language py \
+        --outdir . \
+        --lookup-dir public_regulated_data_types-master/uavcan \
+        public_regulated_data_types-master/reg
+
+      # 3. Компилируем кастомные типы voltbro (зависят от uavcan и reg)
+      python3 -m nunavut \
+        --target-language py \
+        --outdir . \
+        --lookup-dir public_regulated_data_types-master/uavcan \
+        --lookup-dir public_regulated_data_types-master/reg \
+        cyphal-types-master/voltbro/
+    # Проверка по итоговому файлу из папки voltbro
+    creates: /home/pi/.pycyphal/voltbro/config/Endpoint_1_0.py
+  become: true
+  become_user: pi
+
+- name: Add .pycyphal to PYTHONPATH in .bashrc
+  lineinfile:
+    dest: /home/pi/.bashrc
+    line: 'export PYTHONPATH="$PYTHONPATH:/home/pi/.local/lib/python3.12/site-packages:/home/pi/.pycyphal"'
+    state: present
+
+- name: Force downgrade numpy to version 1.26.4
+  ansible.builtin.pip:
+    name: "numpy==1.26.4"
+    state: present
+    extra_args: "--break-system-packages --force-reinstall"
+  become: true
+  become_user: pi
+  register: numpy_fix
+
+- name: Verify numpy version
+  ansible.builtin.shell: python3 -c "import numpy; print(numpy.__version__)"
+  register: numpy_version_check
+  changed_when: false
+
+- name: Show current numpy version
+  ansible.builtin.debug:
+    msg: "Current numpy version is {{ numpy_version_check.stdout }}"

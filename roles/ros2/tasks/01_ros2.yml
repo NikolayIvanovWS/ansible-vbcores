@@ -1,0 +1,100 @@
+---
+- name: Fix Ubuntu 24.04 suites to include noble-updates
+  become: true
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list.d/ubuntu.sources
+    regexp: '^Suites: noble$'
+    replace: 'Suites: noble noble-updates'
+
+- name: Ensure locale is en_US.UTF-8
+  become: true
+  ansible.builtin.locale_gen:
+    name: en_US.UTF-8
+    state: present
+
+- name: Set default locale to en_US.UTF-8
+  become: true
+  ansible.builtin.debconf:
+    name: locales
+    question: locales/default_environment_locale
+    value: en_US.UTF-8
+    vtype: select
+
+- name: Create directory for APT keyrings
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Copy ROS 2 GPG key from local file
+  become: true
+  ansible.builtin.copy:
+    src: ros.key
+    dest: /etc/apt/keyrings/ros-archive-keyring.gpg
+    mode: '0644'
+
+- name: Copy ros2-apt-source.deb
+  become: true
+  ansible.builtin.copy:
+    src: ros2-apt-source.deb
+    dest: /tmp/ros2-apt-source.deb
+    mode: '0644'
+
+- name: Install ros2-apt-source.deb (adds ROS 2 repository)
+  become: true
+  ansible.builtin.shell:
+    cmd: dpkg -i /tmp/ros2-apt-source.deb
+    creates: /etc/apt/sources.list.d/ros2.sources
+
+- name: Update apt cache
+  become: true
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install ROS development tools
+  become: true
+  ansible.builtin.apt:
+    name: ros-dev-tools
+    state: present
+
+- name: Install ROS 2 Jazzy Base
+  become: true
+  ansible.builtin.apt:
+    name: ros-jazzy-ros-base
+    state: present
+
+- name: Install extra ROS base packages
+  become: true
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - ros-jazzy-demo-nodes-cpp
+    - ros-jazzy-demo-nodes-py
+    - ros-jazzy-joint-state-publisher
+    - ros-jazzy-robot-state-publisher
+    - ros-jazzy-xacro
+
+# - name: Initialize rosdep
+#   ansible.builtin.shell:
+#     cmd: rosdep init
+#     creates: /etc/ros/rosdep/sources.list.d/20-default.list
+#   become: true
+#
+# - name: Update rosdep
+#   ansible.builtin.shell:
+#     cmd: rosdep update
+#     creates: /home/pi/.ros/rosdep/sources.cache
+#     executable: /bin/bash
+#   become: true
+#   become_user: pi
+#   register: rosdep_update
+#   retries: 3
+#   delay: 30
+#   until: rosdep_update.rc == 0 
+
+- name: Update .bashrc for ros base
+  lineinfile:
+     dest: /home/pi/.bashrc
+     line: source /opt/ros/{{ rosname }}/setup.bash

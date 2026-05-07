@@ -1,0 +1,10 @@
+---
+- name: Build entire ros2_ws with colcon
+  ansible.builtin.shell:
+    chdir: /home/pi/ros2_ws
+    cmd: source /opt/ros/jazzy/setup.bash && colcon build
+    executable: /bin/bash
+  become: true
+  become_user: pi
+  async: 1800
+  poll: 30

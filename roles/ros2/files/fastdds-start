@@ -1,0 +1,6 @@
+#!/bin/bash
+source /home/pi/.ros_params
+source /opt/ros/jazzy/local_setup.bash
+
+
+/opt/ros/jazzy/bin/fastdds discovery --server-id 0 --verbose -l ${ROBOT_IP} -p 11811

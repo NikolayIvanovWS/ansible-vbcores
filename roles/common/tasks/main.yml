@@ -1,0 +1,7 @@
+--- 
+- include_tasks: 01_system.yml
+- include_tasks: 02_cleanup.yml
+- include_tasks: 03_network.yml
+- include_tasks: 04_swap.yml
+- include_tasks: 05_reboot.yml
+

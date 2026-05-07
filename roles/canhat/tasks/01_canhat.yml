@@ -1,0 +1,76 @@
+---
+
+- name: Configure CAN shield /boot/firmware/config.txt
+  ansible.builtin.blockinfile:
+    marker: "# {mark} ANSIBLE MANAGED BLOCK (CAN)"
+    path: /boot/firmware/config.txt
+    block: |
+      dtparam=spi=on
+      dtoverlay=seeed-can-fd-hat-v2
+
+### reboot!
+
+
+- name: Install apt dependencies for CAN hat
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "python3-systemd"
+    - "python3-pip"
+    - "can-utils" 
+
+
+- name: Create /opt/voltbro dir
+  file:
+    path: /opt/voltbro
+    state: directory
+    mode: 0755    
+    owner: pi
+    group: pi    
+
+- name: Create /opt/voltbro/canhat dir
+  file:
+    path: /opt/voltbro/canhat
+    state: directory
+    mode: 0755
+    owner: pi
+    group: pi            
+
+- name: Copy configs
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/opt/voltbro/"
+    mode: 0644
+    owner: pi
+    group: pi
+  become: true
+  with_items:
+   - "config.ini"
+   - "config.py"
+
+- name: Copy canhat_setup.py
+  ansible.builtin.copy:
+    src: canhat_setup.py
+    dest: "/opt/voltbro/canhat"
+    mode: 0644
+    owner: pi
+    group: pi    
+  become: true
+
+
+- name: Copy CAN hat .services 
+  ansible.builtin.copy:
+    src: canhat.service
+    dest: /lib/systemd/system/
+    owner: root
+    group: root
+    mode: '0644'
+  become: true  
+
+- name: Enable CAN hat service
+  ansible.builtin.systemd:
+    name: canhat.service
+    # state: started
+    enabled: yes    
+  become: true  

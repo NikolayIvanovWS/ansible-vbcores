@@ -1,0 +1,76 @@
+---
+- name: Create ros2_ws/src directory structure
+  ansible.builtin.file:
+    path: /home/pi/ros2_ws/src
+    state: directory
+    mode: '0755'
+    owner: pi
+    group: pi
+  become: true
+  become_user: pi
+
+- name: Clone brover repository
+  ansible.builtin.git:
+    repo: https://github.com/voltbro/brover.git
+    dest: /home/pi/ros2_ws/src/brover
+    version: main
+  become: true
+  become_user: pi
+
+- name: Clone cyphal_ros2_bridge (without submodules initially)
+  ansible.builtin.git:
+    repo: https://github.com/VBCores/cyphal_ros2_bridge.git
+    dest: /home/pi/ros2_ws/src/cyphal_ros2_bridge
+    recursive: false
+    force: yes
+  become: true
+  become_user: pi
+
+- name: Ensure GitHub is in known_hosts and configure git to use HTTPS instead of SSH
+  ansible.builtin.shell: |
+    ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+    git config --global url."https://github.com/".insteadOf git@github.com:
+  become: true
+  become_user: pi
+  changed_when: false
+
+- name: Update submodules recursively
+  ansible.builtin.command:
+    chdir: /home/pi/ros2_ws/src/cyphal_ros2_bridge
+    cmd: git submodule update --init --recursive
+  become: true
+  become_user: pi
+
+- name: Copy test_node.json to cyphal_ros2_bridge examples
+  ansible.builtin.copy:
+    src: test_node.json
+    dest: /home/pi/ros2_ws/src/cyphal_ros2_bridge/examples/test_node.json
+    mode: '0644'
+    owner: pi
+    group: pi
+  become: true
+  become_user: pi
+
+- name: Clone brover_web repository
+  ansible.builtin.git:
+    repo: https://github.com/voltbro/brover_web.git
+    dest: /home/pi/ros2_ws/src/brover_web
+  become: true
+  become_user: pi
+
+- name: Copy udev rule for Voltbro IMU
+  ansible.builtin.copy:
+    src: 50-usb-voltbroimu.rules
+    dest: /etc/udev/rules.d/50-usb-voltbroimu.rules
+    mode: '0644'
+    owner: root
+    group: root
+  become: true
+
+- name: Reload udevadm rules and trigger
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - udevadm control --reload-rules
+    - udevadm trigger
+  become: true
+  changed_when: false

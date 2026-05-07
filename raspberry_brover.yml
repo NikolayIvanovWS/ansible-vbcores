@@ -1,0 +1,21 @@
+---
+- hosts: canhat
+  roles:
+
+  - role: common  
+    tags: [common]
+
+  - role: ros2  
+    tags: [ros2]
+
+  - role: canhat  
+    tags: [canhat] 
+  
+  - role: vscode  
+    tags: [vscode] 
+     
+  - role: brover_soft 
+    tags: [brover_soft]
+
+  - role: network-fallback  
+    tags: [network-fallback]

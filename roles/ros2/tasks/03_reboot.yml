@@ -1,0 +1,8 @@
+- name: Flush filesystem buffers
+  ansible.builtin.command: sync
+  become: true
+
+- name: Reboot host
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+  become: true

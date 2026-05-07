@@ -1,0 +1,12 @@
+network_fallback_interface: eth0
+
+network_fallback_ip: "192.168.123.1"
+network_fallback_netmask: "255.255.255.0"
+network_fallback_cidr: 24
+
+network_fallback_dhcp_range_start: "192.168.123.50"
+network_fallback_dhcp_range_end: "192.168.123.150"
+network_fallback_lease_time: "1h"
+
+network_fallback_dhcp_wait: 15
+network_fallback_poll_interval: 5

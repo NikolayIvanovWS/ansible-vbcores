@@ -1,0 +1,3 @@
+- import_tasks: 01_ros2.yml
+- import_tasks: 02_fastdds.yml
+- import_tasks: 03_reboot.yml

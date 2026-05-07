@@ -1,0 +1,57 @@
+---
+- name: Copy start_ros_nodes.sh to /usr/local/bin
+  ansible.builtin.copy:
+    src: start_ros_nodes.sh
+    dest: /usr/local/bin/start_ros_nodes.sh
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+
+- name: Copy ros_nodes.service to /etc/systemd/system
+  ansible.builtin.copy:
+    src: ros_nodes.service
+    dest: /etc/systemd/system/ros_nodes.service
+    mode: '0644'
+    owner: root
+    group: root
+  become: true
+
+- name: Update .ros_params
+  ansible.builtin.copy:
+    src: .ros_params
+    dest: /home/pi/.ros_params
+    mode: '0644'
+    owner: pi
+    group: pi
+  become: true
+
+- name: Update .bashrc
+  ansible.builtin.copy:
+    src: .bashrc
+    dest: /home/pi/.bashrc
+    mode: '0644'
+    owner: pi
+    group: pi
+  become: true
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+  become: true
+
+- name: Enable and start ros_nodes service
+  ansible.builtin.systemd:
+    name: ros_nodes
+    enabled: yes
+    state: started
+  become: true
+
+- name: Flush filesystem buffers
+  ansible.builtin.command: sync
+  become: true
+
+- name: Reboot host
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+  become: true

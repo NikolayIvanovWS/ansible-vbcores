@@ -1,0 +1,190 @@
+{
+    "node_id": 102,
+    "interface": "can0",
+    "connections": [
+        {
+            "type": "Battery",
+            "cyphal": {
+                "port": 7993,
+                "node": 9
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "read",
+                "name": "/bat"
+            }
+        },
+        {
+            "type": "PowerButtons",
+            "cyphal": {
+                "port": 8003,
+                "node": 9
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "read",
+                "name": "/user_button"
+            }
+        },
+        {
+            "type": "HMI.Led",
+            "cyphal": { "port": 172, "node": 9 },
+            "ros": {
+                "type": "service",
+                "name": "/hmi/led"
+            }
+        },
+        {
+            "type": "HMI.Beeper",
+            "cyphal": { "port": 258, "node": 9 },
+            "ros": {
+                "type": "service",
+                "name": "/hmi/beep"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 2999,
+                "node": 1
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "read",
+                "name": "/m_odom1"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 3001,
+                "node": 1
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "write",
+                "name": "/m_vel1"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 2998,
+                "node": 2
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "read",
+                "name": "/m_odom2"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 3002,
+                "node": 2
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "write",
+                "name": "/m_vel2"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 2997,
+                "node": 3
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "read",
+                "name": "/m_odom3"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 3003,
+                "node": 3
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "write",
+                "name": "/m_vel3"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 2996,
+                "node": 4
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "read",
+                "name": "/m_odom4"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 3004,
+                "node": 4
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "write",
+                "name": "/m_vel4"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 2995,
+                "node": 5
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "read",
+                "name": "/m_odom5"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 3005,
+                "node": 5
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "write",
+                "name": "/m_vel5"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 2994,
+                "node": 6
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "read",
+                "name": "/m_odom6"
+            }
+        },
+        {
+            "type": "AngularVelocity",
+            "cyphal": {
+                "port": 3006,
+                "node": 6
+            },
+            "ros": {
+                "type": "topic",
+                "direction": "write",
+                "name": "/m_vel6"
+            }
+        }
+    ]
+}

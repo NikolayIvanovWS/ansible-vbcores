@@ -1,0 +1,1 @@
+watch -c -b -d  -n 1 -- '/home/pi/extra/scripts/power_report.sh'

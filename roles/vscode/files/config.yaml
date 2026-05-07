@@ -1,0 +1,4 @@
+bind-addr: 0.0.0.0:8090
+auth: password
+password: brobro
+cert: false

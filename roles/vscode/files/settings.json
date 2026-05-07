@@ -1,0 +1,11 @@
+{
+    "workbench.startupEditor": "none",
+    "workbench.colorTheme": "Default Dark+",
+    "python.defaultInterpreterPath": "/usr/bin/python3",
+    "editor.fontSize": 14,
+    "editor.tabSize": 4,
+
+    "python.languageServer": "Pylance",
+    "python.analysis.downloadChannel": "stable",
+    "python.analysis.autoImportCompletions": true
+}
