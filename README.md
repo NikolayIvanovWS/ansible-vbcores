@@ -42,9 +42,18 @@ sudo reboot
 git clone https://github.com/NikolayIvanovWS/ansible-vbcores.git
 cd ansible-vbcores
    ```
-6. При необходимости скорректируйте IP-адрес, пароли и другие переменные в файлах `hosts` и `group_vars/all.yml`.
+6. Загрузка code-server
+Перед запуском основного плейбука скачайте deb-пакет code-server (требуется для роли `vscode`):
 
-7. Запустите полный сценарий настройки:
+```bash
+cd roles/vscode/files/
+wget https://github.com/coder/code-server/releases/download/v4.117.0/code-server_4.117.0_arm64.deb
+cd ../../..
+```
+
+7. При необходимости скорректируйте IP-адрес, пароли и другие переменные в файлах `hosts` и `group_vars/all.yml`.
+
+8. Запустите полный сценарий настройки:
 
    ```bash
    ansible-playbook -i hosts raspberry_brover.yml
