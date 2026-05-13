@@ -9,7 +9,6 @@ set +a
 
 # Запускаем ноды
 
-ros2 launch usb_cam camera.launch.py &
 ros2 launch brover_control brover_control_launch.xml &
 ros2 launch brover_web web_server.xml &
 

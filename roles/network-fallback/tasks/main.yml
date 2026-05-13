@@ -11,6 +11,9 @@
     enabled: false
     masked: true
 
+- name: Gather service facts for fallback handlers
+  ansible.builtin.service_facts:
+
 
 # - name: Deploy netplan configuration
 #   ansible.builtin.template:

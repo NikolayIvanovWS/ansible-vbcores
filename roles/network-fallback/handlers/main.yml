@@ -16,6 +16,8 @@
   ansible.builtin.systemd:
     name: dnsmasq-fallback
     state: restarted
-  when: ansible_facts.services['dnsmasq-fallback.service'] is defined and
-        ansible_facts.services['dnsmasq-fallback.service'].state == 'running'
+  when: >
+    (ansible_facts.services | default({})).get(
+      'dnsmasq-fallback.service', {}
+    ).get('state', '') == 'running'
   failed_when: false

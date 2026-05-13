@@ -36,11 +36,15 @@ fi
 # 3. Обновление файла /etc/hosts
 echo "➡️ Обновление файла **/etc/hosts**..."
 
-# Используем sed для замены старого имени хоста на новое в /etc/hosts
-# Замена производится только для строк, начинающихся с 127.0.0.1 или ::1
-sed -i "s/^127\.0\.0\.1\s\+$OLD_HOSTNAME/127\.0\.0\.1\t$NEW_HOSTNAME/" /etc/hosts
-sed -i "s/^::1\s\+$OLD_HOSTNAME/::1\t$NEW_HOSTNAME/" /etc/hosts
-sed -i "s/\s$OLD_HOSTNAME\s/\s$NEW_HOSTNAME\s/g" /etc/hosts # Общий случай, может быть опасным, но для hosts обычно безопасно
+# Ubuntu обычно хранит имя хоста в строке 127.0.1.1.
+if grep -qE '^127\.0\.1\.1[[:space:]]+' /etc/hosts; then
+    sed -i -E "s/^127\.0\.1\.1[[:space:]]+.*/127.0.1.1\t$NEW_HOSTNAME/" /etc/hosts
+else
+    echo -e "127.0.1.1\t$NEW_HOSTNAME" >> /etc/hosts
+fi
+
+sed -i -E "s/^127\.0\.0\.1[[:space:]]+$OLD_HOSTNAME([[:space:]]|$)/127.0.0.1\t$NEW_HOSTNAME\1/" /etc/hosts
+sed -i -E "s/^::1[[:space:]]+$OLD_HOSTNAME([[:space:]]|$)/::1\t$NEW_HOSTNAME\1/" /etc/hosts
 
 if [ $? -eq 0 ]; then
     echo "✅ /etc/hosts обновлен."
@@ -57,7 +61,16 @@ else
     echo "❌ Ошибка при применении имени хоста через hostnamectl."
 fi
 
-# 5. Завершение
+# 5. Перезапуск mDNS, чтобы имя .local обновилось в сети
+echo "➡️ Перезапуск avahi-daemon для обновления имени .local..."
+if systemctl list-unit-files avahi-daemon.service >/dev/null 2>&1; then
+    systemctl restart avahi-daemon
+    echo "✅ avahi-daemon перезапущен."
+else
+    echo "⚠️ avahi-daemon не установлен. Имя .local может не работать."
+fi
+
+# 6. Завершение
 echo ""
 echo "🎉 Готово! Имя хоста изменено на **$NEW_HOSTNAME**."
 echo "Для полной уверенности рекомендуется **ПЕРЕЗАГРУЗИТЬ** систему."

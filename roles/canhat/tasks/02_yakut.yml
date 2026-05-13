@@ -26,10 +26,10 @@
 - name: Install pip dependencies for CAN hat
   ansible.builtin.pip:
     name: 
-      - "yakut"
-      - "pycyphal[dsdl]"
+      - "yakut==0.14.1"
+      - "pycyphal[dsdl]==1.24.5"
     state: present
-    extra_args: "--break-system-packages"
+    extra_args: "--break-system-packages --force-reinstall"
   become: true
   become_user: pi
 

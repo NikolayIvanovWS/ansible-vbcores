@@ -1,6 +1,6 @@
 [Unit]
 Description="Fast DDS Server"
-After=getty.target
+After=network-online.target
 Wants=network-online.target
 
 [Service]

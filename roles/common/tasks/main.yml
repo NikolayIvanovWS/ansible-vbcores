@@ -1,7 +1,30 @@
---- 
-- include_tasks: 01_system.yml
-- include_tasks: 02_cleanup.yml
-- include_tasks: 03_network.yml
-- include_tasks: 04_swap.yml
-- include_tasks: 05_reboot.yml
+---
+- ansible.builtin.include_tasks:
+    file: 01_system.yml
+    apply:
+      tags: common_system
+  tags: [common_system]
 
+- ansible.builtin.include_tasks:
+    file: 02_cleanup.yml
+    apply:
+      tags: common_cleanup
+  tags: [common_cleanup]
+
+- ansible.builtin.include_tasks:
+    file: 03_network.yml
+    apply:
+      tags: common_network
+  tags: [common_network]
+
+- ansible.builtin.include_tasks:
+    file: 04_swap.yml
+    apply:
+      tags: common_swap
+  tags: [common_swap]
+
+- ansible.builtin.include_tasks:
+    file: 05_reboot.yml
+    apply:
+      tags: common_reboot
+  tags: [common_reboot]

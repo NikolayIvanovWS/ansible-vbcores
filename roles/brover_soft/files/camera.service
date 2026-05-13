@@ -1,0 +1,17 @@
+[Unit]
+Description=Autostart ROS 2 USB Camera
+After=ros_nodes.service
+Wants=ros_nodes.service
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/usr/local/bin/start_camera.sh
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=0
+StandardOutput=append:/var/log/camera.log
+StandardError=append:/var/log/camera.err
+
+[Install]
+WantedBy=multi-user.target

@@ -20,6 +20,7 @@
     mode: '0755'
   
 - name: Copy default fastdds_superclient.xml 
+  become: true
   ansible.builtin.copy:
     src: "fastdds_superclient.xml"
     dest: /home/pi/.ros/fastdds_superclient.xml
@@ -47,6 +48,7 @@
   become: true  
 
 - name: Copy fastdds-start Services
+  become: true
   ansible.builtin.copy:
     src: "fastdds-start"
     dest: /home/pi/.ros

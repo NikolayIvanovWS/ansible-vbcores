@@ -37,6 +37,14 @@
     - "util-linux-extra"
     - "wavemon"
     - "net-tools"
+    - "avahi-daemon"
+
+- name: Enable and start Avahi mDNS service
+  ansible.builtin.systemd:
+    name: avahi-daemon
+    state: started
+    enabled: true
+  become: true
 
 - name: Set a hostname 
   ansible.builtin.hostname:
@@ -77,31 +85,6 @@
     owner: pi
     group: pi  
   become: true   
-
-- name: Copy firstboot.sh script
-  ansible.builtin.copy:
-    src: "scripts/firstboot.sh"
-    dest: "/boot/firmware/firstboot.sh" 
-    owner: root
-    group: root
-    mode: '0755'
-  become: true     
-   
-- name: Copy firstboot Services
-  ansible.builtin.copy:
-    src: systemd/firstboot.service
-    dest: /lib/systemd/system/  
-    owner: root
-    group: root
-    mode: '0644'
-  become: true        
-
-- name: Enable firstboot services
-  ansible.builtin.systemd:
-    name: firstboot
-    state: started
-    enabled: yes
-  become: true      
 
 - name: Copy change_hostname.sh to pi home directory
   copy:

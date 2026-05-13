@@ -7,6 +7,7 @@
     owner: root
     group: root
   become: true
+  register: ros_nodes_script
 
 - name: Copy ros_nodes.service to /etc/systemd/system
   ansible.builtin.copy:
@@ -16,6 +17,27 @@
     owner: root
     group: root
   become: true
+  register: ros_nodes_unit
+
+- name: Copy start_camera.sh to /usr/local/bin
+  ansible.builtin.copy:
+    src: start_camera.sh
+    dest: /usr/local/bin/start_camera.sh
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+  register: camera_script
+
+- name: Copy camera.service to /etc/systemd/system
+  ansible.builtin.copy:
+    src: camera.service
+    dest: /etc/systemd/system/camera.service
+    mode: '0644'
+    owner: root
+    group: root
+  become: true
+  register: camera_unit
 
 - name: Update .ros_params
   ansible.builtin.copy:
@@ -44,7 +66,14 @@
   ansible.builtin.systemd:
     name: ros_nodes
     enabled: yes
-    state: started
+    state: "{{ 'restarted' if (ros_nodes_script.changed or ros_nodes_unit.changed) else 'started' }}"
+  become: true
+
+- name: Enable and start camera service
+  ansible.builtin.systemd:
+    name: camera
+    enabled: yes
+    state: "{{ 'restarted' if (camera_script.changed or camera_unit.changed) else 'started' }}"
   become: true
 
 - name: Flush filesystem buffers

@@ -29,27 +29,36 @@
     state: absent
   with_items: "{{ clear_dirs }}"
 
-- name: Check whether firstboot.sh.done exists
-  register: firstboot_done
-  stat:
+- name: Restore firstboot script for final image
+  ansible.builtin.copy:
+    src: scripts/firstboot.sh
+    dest: /boot/firmware/firstboot.sh
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+
+- name: Remove old firstboot done marker
+  ansible.builtin.file:
     path: /boot/firmware/firstboot.sh.done
+    state: absent
+  become: true
 
-- name: Move files if firstboot.sh.done exists
-  block:
-    - name: Copy firstboot.sh.done Services
-      ansible.builtin.copy:
-        src: "/boot/firmware/firstboot.sh.done"
-        dest: "/boot/firmware/firstboot.sh"
-        owner: root
-        group: root
-        mode: '0755'
-        remote_src: yes
+- name: Install firstboot service for final image
+  ansible.builtin.copy:
+    src: systemd/firstboot.service
+    dest: /lib/systemd/system/firstboot.service
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
 
-    - name: Remove firstboot.sh.done old files
-      ansible.builtin.file:
-        path: /boot/firmware/firstboot.sh.done
-        state: absent
-  when: firstboot_done.stat.exists == false
+- name: Enable firstboot service for next boot
+  ansible.builtin.systemd:
+    name: firstboot
+    enabled: true
+    daemon_reload: true
+  become: true
 
 # --- Новые задачи для чистоты образа ---
 
@@ -109,9 +118,4 @@
 
 - name: Flush filesystem buffers
   ansible.builtin.command: sync
-  become: true
-
-- name: Reboot host
-  ansible.builtin.reboot:
-    reboot_timeout: 600
   become: true

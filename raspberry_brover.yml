@@ -12,10 +12,10 @@
     tags: [canhat] 
   
   - role: vscode  
-    tags: [vscode] 
-     
-  - role: brover_soft 
-    tags: [brover_soft]
+    tags: [vscode]
 
   - role: network-fallback  
     tags: [network-fallback]
+     
+  - role: brover_soft 
+    tags: [brover_soft]
