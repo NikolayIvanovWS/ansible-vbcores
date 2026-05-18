@@ -16,6 +16,9 @@
 
   - role: network-fallback  
     tags: [network-fallback]
+
+  - role: network-wifi-fallback
+    tags: [network-wifi-fallback]
      
   - role: brover_soft 
     tags: [brover_soft]

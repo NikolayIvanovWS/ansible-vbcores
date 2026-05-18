@@ -1,0 +1,12 @@
+[Unit]
+Description=hostapd Wi-Fi Access Point (Fallback Mode)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/hostapd /run/hostapd-wifi-fallback.conf
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

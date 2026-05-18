@@ -1,0 +1,17 @@
+network_wifi_fallback_interface: wlan0
+
+network_wifi_fallback_ssid: "{{ ansible_hostname }}"
+network_wifi_fallback_country_code: RU
+network_wifi_fallback_channel: 6
+network_wifi_fallback_passphrase: turtlew001
+
+network_wifi_fallback_ip: "192.168.50.1"
+network_wifi_fallback_cidr: 24
+network_wifi_fallback_netmask: "255.255.255.0"
+network_wifi_fallback_dhcp_range_start: "192.168.50.50"
+network_wifi_fallback_dhcp_range_end: "192.168.50.150"
+network_wifi_fallback_lease_time: "1h"
+
+network_wifi_fallback_connect_wait: 60
+network_wifi_fallback_poll_interval: 10
+network_wifi_fallback_dependent_services: "fastdds ros_nodes camera"

@@ -1,0 +1,108 @@
+- name: Install Wi-Fi fallback packages
+  ansible.builtin.apt:
+    name:
+      - hostapd
+      - dnsmasq
+      - iw
+    state: present
+    update_cache: true
+
+- name: Stop and disable default hostapd service
+  ansible.builtin.systemd:
+    name: hostapd
+    state: stopped
+    enabled: false
+    masked: true
+  failed_when: false
+
+- name: Stop and disable default dnsmasq service
+  ansible.builtin.systemd:
+    name: dnsmasq
+    state: stopped
+    enabled: false
+    masked: true
+  failed_when: false
+
+- name: Gather service facts for Wi-Fi fallback handlers
+  ansible.builtin.service_facts:
+
+- name: Deploy hostapd Wi-Fi fallback configuration
+  ansible.builtin.template:
+    src: hostapd-wifi-fallback.conf.j2
+    dest: /etc/hostapd/hostapd-wifi-fallback.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart hostapd-wifi-fallback
+
+- name: Deploy dnsmasq Wi-Fi fallback configuration
+  ansible.builtin.template:
+    src: dnsmasq-wifi-fallback.conf.j2
+    dest: /etc/dnsmasq-wifi-fallback.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart dnsmasq-wifi-fallback
+
+- name: Deploy Wi-Fi fallback monitoring script
+  ansible.builtin.template:
+    src: wifi-ap-fallback.sh.j2
+    dest: /usr/local/bin/wifi-ap-fallback.sh
+    owner: root
+    group: root
+    mode: "0755"
+  notify: Restart wifi-ap-fallback
+
+- name: Deploy hostapd Wi-Fi fallback systemd unit
+  ansible.builtin.copy:
+    src: hostapd-wifi-fallback.service
+    dest: /etc/systemd/system/hostapd-wifi-fallback.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Systemd daemon-reload
+
+- name: Deploy dnsmasq Wi-Fi fallback systemd unit
+  ansible.builtin.copy:
+    src: dnsmasq-wifi-fallback.service
+    dest: /etc/systemd/system/dnsmasq-wifi-fallback.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Systemd daemon-reload
+
+- name: Deploy Wi-Fi AP fallback monitor systemd unit
+  ansible.builtin.copy:
+    src: wifi-ap-fallback.service
+    dest: /etc/systemd/system/wifi-ap-fallback.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Systemd daemon-reload
+
+- name: Flush handlers to apply daemon-reload before enabling services
+  ansible.builtin.meta: flush_handlers
+
+- name: Keep hostapd Wi-Fi fallback service disabled
+  ansible.builtin.systemd:
+    name: hostapd-wifi-fallback
+    enabled: false
+    daemon_reload: true
+
+- name: Keep dnsmasq Wi-Fi fallback service disabled
+  ansible.builtin.systemd:
+    name: dnsmasq-wifi-fallback
+    enabled: false
+    daemon_reload: true
+
+- name: Enable and start Wi-Fi AP fallback monitor
+  ansible.builtin.systemd:
+    name: wifi-ap-fallback
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Flush filesystem buffers
+  ansible.builtin.command: sync
+  changed_when: false
+  become: true

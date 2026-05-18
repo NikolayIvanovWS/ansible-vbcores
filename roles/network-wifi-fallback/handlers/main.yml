@@ -1,0 +1,28 @@
+- name: Systemd daemon-reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Restart wifi-ap-fallback
+  ansible.builtin.systemd:
+    name: wifi-ap-fallback
+    state: restarted
+
+- name: Restart hostapd-wifi-fallback
+  ansible.builtin.systemd:
+    name: hostapd-wifi-fallback
+    state: restarted
+  when: >
+    (ansible_facts.services | default({})).get(
+      'hostapd-wifi-fallback.service', {}
+    ).get('state', '') == 'running'
+  failed_when: false
+
+- name: Restart dnsmasq-wifi-fallback
+  ansible.builtin.systemd:
+    name: dnsmasq-wifi-fallback
+    state: restarted
+  when: >
+    (ansible_facts.services | default({})).get(
+      'dnsmasq-wifi-fallback.service', {}
+    ).get('state', '') == 'running'
+  failed_when: false
