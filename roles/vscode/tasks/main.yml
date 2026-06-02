@@ -9,18 +9,17 @@
     state: present
     update_cache: true
 
-- name: Copy code-server arm64 deb package
-  ansible.builtin.copy:
-    src: code-server_4.117.0_arm64.deb
-    dest: /tmp/code-server_4.117.0_arm64.deb
-    mode: '0644'
+- name: Download code-server installer
+  ansible.builtin.get_url:
+    url: https://code-server.dev/install.sh
+    dest: /tmp/code-server-install.sh
+    mode: '0755'
 
-- name: Install code-server from local deb
+- name: Install code-server from internet
   become: true
-  ansible.builtin.shell: |
-    dpkg -i /tmp/code-server_4.117.0_arm64.deb || true
-    apt-get install -f -y
-  changed_when: false
+  ansible.builtin.command: /bin/sh /tmp/code-server-install.sh
+  args:
+    creates: /usr/bin/code-server
 
 - name: Check code-server version
   ansible.builtin.command: code-server --version
@@ -57,12 +56,33 @@
     port: '8090'
     proto: tcp
 
-- name: Install Python extension via code-server CLI
-  ansible.builtin.command: code-server --install-extension ms-python.python
+- name: Get installed code-server extensions
+  ansible.builtin.command: code-server --list-extensions
   become: true
   become_user: pi
-  args:
-    creates: /home/pi/.local/share/code-server/extensions/ms-python.python
+  register: code_server_extensions
+  changed_when: false
+
+- name: Install VS Code extensions via code-server CLI
+  ansible.builtin.command: "code-server --install-extension {{ item }}"
+  become: true
+  become_user: pi
+  loop:
+    - ms-python.python
+  when: item not in code_server_extensions.stdout_lines
+
+- name: Download Pylance extension from Visual Studio Marketplace
+  ansible.builtin.get_url:
+    url: https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-python/vsextensions/vscode-pylance/latest/vspackage
+    dest: /tmp/vscode-pylance.vsix
+    mode: '0644'
+  when: "'ms-python.vscode-pylance' not in code_server_extensions.stdout_lines"
+
+- name: Install Pylance extension from VSIX
+  ansible.builtin.command: code-server --install-extension /tmp/vscode-pylance.vsix
+  become: true
+  become_user: pi
+  when: "'ms-python.vscode-pylance' not in code_server_extensions.stdout_lines"
 
 - name: Ensure code-server User settings directory exists
   ansible.builtin.file:
