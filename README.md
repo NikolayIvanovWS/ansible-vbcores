@@ -9,7 +9,7 @@ Ansible-плейбук для автоматической подготовки 
 | common | Базовая настройка ОС: локаль, часовой пояс, пароль, hostname, отключение автообновлений, очистка snapd/cloud-init, swap, сеть (Wi-Fi/eth), скрипты расширения SD-карты и диагностики питания. |
 | ros2 | Установка ROS 2 Jazzy (репозиторий, ros-base, дополнительные пакеты), настройка Fast DDS discovery-сервера, sysctl-оптимизации. |
 | canhat | Поддержка CAN-шины: оверлей Seeed CAN-FD HAT v2, скрипты инициализации CAN, установка Yakut, PyCyphal, компиляция Cyphal-типов (стандартных и Voltbro). |
-| vscode | Установка VS Code Server (code-server) из локального deb, настройка парольного доступа, предустановка Python-расширения. |
+| vscode | Установка VS Code Server (code-server) через официальный installer, настройка парольного доступа, открытие порта 8090, предустановка Python/Pylance-расширений. |
 | brover_soft | Исходный код и зависимости ровера: клонирование репозиториев (brover, cyphal_ros2_bridge, brover_web), сборка, настройка systemd-сервиса ros_nodes, конфигурационные файлы (.ros_params, .bashrc), udev-правило для IMU, установка системных зависимостей, смена hostname на brover01, запись IMAGE_VERSION в /etc/os-release, замена /boot/firmware/config.txt. |
 | network-fallback | Резервный DHCP-сервер на eth0: при отсутствии DHCP робот сам становится точкой доступа (192.168.123.1/24) и раздаёт адреса. |
 | clean | Подготовка образа к распространению: очистка логов, временных файлов, сброс SSH-ключей, machine-id, apt-кэша, уменьшение journal, восстановление firstboot-механизма и перезагрузка. |
@@ -41,19 +41,20 @@ sudo reboot
 ```bash
 git clone https://github.com/NikolayIvanovWS/ansible-vbcores.git
 cd ansible-vbcores
-   ```
-6. Загрузка code-server
-Перед запуском основного плейбука скачайте deb-пакет code-server (требуется для роли `vscode`):
-
-```bash
-cd roles/vscode/files/
-wget https://github.com/coder/code-server/releases/download/v4.117.0/code-server_4.117.0_arm64.deb
-cd ../../..
 ```
 
-7. При необходимости скорректируйте IP-адрес, пароли и другие переменные в файлах `hosts` и `group_vars/all.yml`.
+6. Скорректируйте IP-адрес, пользователя, пароль и sudo-пароль в группе `[canhat]` файла `hosts`.
 
-8. Запустите полный сценарий настройки:
+Пример:
+
+```ini
+[canhat]
+ubuntu24common ansible_host=192.168.1.48 ansible_ssh_user=pi ansible_ssh_pass=brobro ansible_sudo_pass=brobro ansible_become=yes ansible_become_method=sudo
+```
+
+При необходимости также скорректируйте переменные в `group_vars/all.yml`.
+
+7. Запустите полный сценарий настройки:
 
 ```bash
 ansible-playbook -i hosts raspberry_brover.yml
@@ -63,6 +64,17 @@ ansible-playbook -i hosts raspberry_brover.yml
 ## Подготовка чистого образа для пользователей
 
 После завершения `raspberry_brover.yml` и проверки всех функций робота, выполните:
+
+1. Укажите IP-адрес подготовленного устройства в группе `[clean]` файла `hosts`.
+
+Пример:
+
+```ini
+[clean]
+brover01 ansible_host=192.168.1.48 ansible_ssh_user=pi ansible_ssh_pass=brobro ansible_sudo_pass=brobro ansible_become=yes ansible_become_method=sudo
+```
+
+2. Запустите очистку:
 
 ```bash
 ansible-playbook -i hosts raspberry_clean.yml
