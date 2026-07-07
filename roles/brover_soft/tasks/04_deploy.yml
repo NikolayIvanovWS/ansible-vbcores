@@ -57,6 +57,15 @@
     group: pi
   become: true
 
+- name: Copy brover_selftest.py to /home/pi
+  ansible.builtin.copy:
+    src: brover_selftest.py
+    dest: /home/pi/brover_selftest.py
+    mode: '0755'
+    owner: pi
+    group: pi
+  become: true
+
 - name: Reload systemd daemon
   ansible.builtin.systemd:
     daemon_reload: true

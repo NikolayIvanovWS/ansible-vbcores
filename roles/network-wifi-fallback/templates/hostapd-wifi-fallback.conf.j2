@@ -1,0 +1,16 @@
+interface={{ network_wifi_fallback_interface }}
+driver=nl80211
+ssid={{ network_wifi_fallback_ssid }}
+country_code={{ network_wifi_fallback_country_code }}
+ieee80211d=1
+hw_mode=g
+channel={{ network_wifi_fallback_channel }}
+ieee80211n=1
+wmm_enabled=1
+auth_algs=1
+wpa=2
+wpa_passphrase={{ network_wifi_fallback_passphrase }}
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+ctrl_interface=/run/hostapd
+ctrl_interface_group=0

@@ -1,0 +1,7 @@
+interface={{ network_wifi_fallback_interface }}
+bind-interfaces
+listen-address={{ network_wifi_fallback_ip }}
+dhcp-range={{ network_wifi_fallback_dhcp_range_start }},{{ network_wifi_fallback_dhcp_range_end }},{{ network_wifi_fallback_netmask }},{{ network_wifi_fallback_lease_time }}
+dhcp-option=3,{{ network_wifi_fallback_ip }}
+dhcp-option=6,{{ network_wifi_fallback_ip }}
+port=0

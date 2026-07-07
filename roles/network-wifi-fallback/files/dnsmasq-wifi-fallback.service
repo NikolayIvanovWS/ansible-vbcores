@@ -1,0 +1,14 @@
+[Unit]
+Description=dnsmasq DHCP Server for Wi-Fi Fallback AP
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/sbin/dnsmasq --conf-file=/etc/dnsmasq-wifi-fallback.conf --pid-file=/run/dnsmasq-wifi-fallback.pid
+ExecStop=/bin/kill -TERM $MAINPID
+PIDFile=/run/dnsmasq-wifi-fallback.pid
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

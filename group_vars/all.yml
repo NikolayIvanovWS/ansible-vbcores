@@ -4,7 +4,7 @@
 rosname: "jazzy"
 ubuntu_name: "noble"
 
-image_version: "broverOS_v2.5"
+image_version: "broverOS_v2.6"
 
 swap_vars:
   size: 1G

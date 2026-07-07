@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+IFACE="{{ network_wifi_fallback_interface }}"
+FALLBACK_IP="{{ network_wifi_fallback_ip }}/{{ network_wifi_fallback_cidr }}"
+FALLBACK_ADDR="{{ network_wifi_fallback_ip }}"
+CONNECT_WAIT_SECONDS={{ network_wifi_fallback_connect_wait }}
+POLL_INTERVAL={{ network_wifi_fallback_poll_interval }}
+HOSTAPD_SERVICE="hostapd-wifi-fallback"
+DNSMASQ_SERVICE="dnsmasq-wifi-fallback"
+DEPENDENT_SERVICES="{{ network_wifi_fallback_dependent_services }}"
+HOSTAPD_TEMPLATE="/etc/hostapd/hostapd-wifi-fallback.conf"
+HOSTAPD_RUNTIME="/run/hostapd-wifi-fallback.conf"
+AP_PASSPHRASE="{{ network_wifi_fallback_passphrase }}"
+
+FALLBACK_ACTIVE=false
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+}
+
+has_wifi_connection() {
+    ip -4 route show default dev "$IFACE" 2>/dev/null | grep -q '^default '
+}
+
+has_fallback_ip() {
+    ip -4 addr show dev "$IFACE" 2>/dev/null | grep -q "inet ${FALLBACK_ADDR}/"
+}
+
+restart_dependent_services() {
+    for svc in $DEPENDENT_SERVICES; do
+        if systemctl is-active --quiet "$svc" 2>/dev/null; then
+            log "Restarting dependent service: ${svc}"
+            systemctl restart "$svc" 2>/dev/null || true
+        fi
+    done
+}
+
+prepare_hostapd_config() {
+    local ssid
+    ssid=$(hostname)
+    sed \
+        -e "s/^ssid=.*/ssid=${ssid}/" \
+        -e "s/^wpa_passphrase=.*/wpa_passphrase=${AP_PASSPHRASE}/" \
+        "$HOSTAPD_TEMPLATE" > "$HOSTAPD_RUNTIME"
+    log "Prepared fallback AP config: SSID=${ssid}"
+}
+
+enable_fallback() {
+    if $FALLBACK_ACTIVE || has_fallback_ip; then
+        FALLBACK_ACTIVE=true
+        return
+    fi
+
+    log "Wi-Fi connection not available. Starting fallback AP on ${IFACE}"
+    prepare_hostapd_config
+    systemctl stop "netplan-wpa-${IFACE}.service" 2>/dev/null || true
+    systemctl stop wpa_supplicant.service 2>/dev/null || true
+    ip addr flush dev "$IFACE" 2>/dev/null || true
+    ip addr add "$FALLBACK_IP" dev "$IFACE"
+    ip link set "$IFACE" up
+    systemctl start "$HOSTAPD_SERVICE"
+    systemctl start "$DNSMASQ_SERVICE"
+    FALLBACK_ACTIVE=true
+    log "Fallback AP started at ${FALLBACK_ADDR}"
+    restart_dependent_services
+}
+
+disable_fallback() {
+    if ! $FALLBACK_ACTIVE && ! has_fallback_ip; then
+        return
+    fi
+
+    log "Stopping fallback AP"
+    systemctl stop "$DNSMASQ_SERVICE" 2>/dev/null || true
+    systemctl stop "$HOSTAPD_SERVICE" 2>/dev/null || true
+    ip addr del "$FALLBACK_IP" dev "$IFACE" 2>/dev/null || true
+    systemctl start "netplan-wpa-${IFACE}.service" 2>/dev/null || true
+    FALLBACK_ACTIVE=false
+    log "Fallback AP stopped"
+    restart_dependent_services
+}
+
+cleanup() {
+    log "Shutting down Wi-Fi AP fallback monitor"
+    disable_fallback
+    exit 0
+}
+
+trap cleanup SIGTERM SIGINT
+
+log "Wi-Fi AP fallback monitor started for ${IFACE}"
+sleep "$CONNECT_WAIT_SECONDS"
+
+while true; do
+    if has_wifi_connection; then
+        disable_fallback
+    else
+        enable_fallback
+    fi
+
+    sleep "$POLL_INTERVAL"
+done

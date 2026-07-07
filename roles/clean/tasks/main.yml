@@ -29,6 +29,12 @@
     state: absent
   with_items: "{{ clear_dirs }}"
 
+- name: Remove brover selftest reports
+  ansible.builtin.file:
+    path: /home/pi/brover_selftest_reports
+    state: absent
+  become: true
+
 - name: Restore firstboot script for final image
   ansible.builtin.copy:
     src: scripts/firstboot.sh
@@ -118,4 +124,9 @@
 
 - name: Flush filesystem buffers
   ansible.builtin.command: sync
+  become: true
+
+- name: Reboot host
+  ansible.builtin.reboot:
+    reboot_timeout: 600
   become: true
