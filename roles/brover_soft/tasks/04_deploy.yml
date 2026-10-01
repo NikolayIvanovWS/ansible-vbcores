@@ -39,6 +39,29 @@
   become: true
   register: camera_unit
 
+- name: Copy camera web watchdog script to /usr/local/bin
+  ansible.builtin.copy:
+    src: camera_web_watchdog.sh
+    dest: /usr/local/bin/camera_web_watchdog.sh
+    mode: '0755'
+    owner: root
+    group: root
+  become: true
+  register: camera_web_watchdog_script
+
+- name: Copy camera web watchdog systemd units
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    mode: '0644'
+    owner: root
+    group: root
+  loop:
+    - camera-web-watchdog.service
+    - camera-web-watchdog.timer
+  become: true
+  register: camera_web_watchdog_units
+
 - name: Update .ros_params
   ansible.builtin.copy:
     src: .ros_params
@@ -53,15 +76,6 @@
     src: .bashrc
     dest: /home/pi/.bashrc
     mode: '0644'
-    owner: pi
-    group: pi
-  become: true
-
-- name: Copy brover_selftest.py to /home/pi
-  ansible.builtin.copy:
-    src: brover_selftest.py
-    dest: /home/pi/brover_selftest.py
-    mode: '0755'
     owner: pi
     group: pi
   become: true
@@ -83,6 +97,13 @@
     name: camera
     enabled: yes
     state: "{{ 'restarted' if (camera_script.changed or camera_unit.changed) else 'started' }}"
+  become: true
+
+- name: Enable and start camera web watchdog timer
+  ansible.builtin.systemd:
+    name: camera-web-watchdog.timer
+    enabled: true
+    state: "{{ 'restarted' if (camera_web_watchdog_script.changed or camera_web_watchdog_units.changed) else 'started' }}"
   become: true
 
 - name: Flush filesystem buffers
