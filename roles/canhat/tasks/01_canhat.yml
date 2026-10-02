@@ -18,6 +18,8 @@
   with_items:
     - "python3-systemd"
     - "python3-pip"
+    - "python3-cffi"
+    - "python3-venv"
     - "can-utils" 
 
 
@@ -73,4 +75,4 @@
     name: canhat.service
     # state: started
     enabled: yes    
-  become: true  
+  become: true
