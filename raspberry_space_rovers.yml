@@ -1,0 +1,28 @@
+---
+- name: Prepare broverOS for the Space Robotics Rovers final
+  hosts: canhat
+  vars:
+    brover_web_enabled: false
+    brover_version: radiolink-update
+  roles:
+
+  - role: common  
+    tags: [common]
+
+  - role: ros2  
+    tags: [ros2]
+
+  - role: canhat  
+    tags: [canhat] 
+  
+  - role: vscode  
+    tags: [vscode]
+
+  - role: network-fallback  
+    tags: [network-fallback]
+
+  - role: network-wifi-fallback
+    tags: [network-wifi-fallback]
+     
+  - role: brover_soft 
+    tags: [brover_soft]

@@ -13,7 +13,7 @@
   ansible.builtin.git:
     repo: https://github.com/voltbro/brover.git
     dest: /home/pi/ros2_ws/src/brover
-    version: main
+    version: "{{ brover_version }}"
   become: true
   become_user: pi
 
@@ -52,6 +52,7 @@
   become_user: pi
 
 - name: Clone brover_web repository
+  when: brover_web_enabled | bool
   ansible.builtin.git:
     repo: https://github.com/voltbro/brover_web.git
     dest: /home/pi/ros2_ws/src/brover_web

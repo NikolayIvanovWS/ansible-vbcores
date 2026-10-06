@@ -10,7 +10,9 @@ set +a
 # Запускаем ноды
 
 ros2 launch brover_control brover_control_launch.xml &
+{% if brover_web_enabled | bool %}
 ros2 launch brover_web web_server.xml &
+{% endif %}
 
 ros2 service call /odom/reset std_srvs/srv/Empty &
 ros2 service call /hmi/led cyphal_ros2_bridge/srv/CallHMILed "{'led': {'r':0, 'g':255, 'b':0, 'interface':0}}" &

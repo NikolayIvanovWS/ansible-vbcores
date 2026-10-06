@@ -1,7 +1,7 @@
 ---
-- name: Copy start_ros_nodes.sh to /usr/local/bin
-  ansible.builtin.copy:
-    src: start_ros_nodes.sh
+- name: Render start_ros_nodes.sh to /usr/local/bin
+  ansible.builtin.template:
+    src: start_ros_nodes.sh.j2
     dest: /usr/local/bin/start_ros_nodes.sh
     mode: '0755'
     owner: root
@@ -40,6 +40,7 @@
   register: camera_unit
 
 - name: Copy camera web watchdog script to /usr/local/bin
+  when: brover_web_enabled | bool
   ansible.builtin.copy:
     src: camera_web_watchdog.sh
     dest: /usr/local/bin/camera_web_watchdog.sh
@@ -50,6 +51,7 @@
   register: camera_web_watchdog_script
 
 - name: Copy camera web watchdog systemd units
+  when: brover_web_enabled | bool
   ansible.builtin.copy:
     src: "{{ item }}"
     dest: "/etc/systemd/system/{{ item }}"
@@ -100,6 +102,7 @@
   become: true
 
 - name: Enable and start camera web watchdog timer
+  when: brover_web_enabled | bool
   ansible.builtin.systemd:
     name: camera-web-watchdog.timer
     enabled: true

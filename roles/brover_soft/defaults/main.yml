@@ -1,0 +1,4 @@
+---
+# Install the ready-made rover web interface and its video watchdog.
+brover_web_enabled: true
+brover_version: main
