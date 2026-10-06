@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodically check ROS camera web stream
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=5s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

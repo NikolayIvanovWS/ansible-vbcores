@@ -1,0 +1,138 @@
+---
+- name: Set hostname to agrobrover01
+  ansible.builtin.hostname:
+    name: agrobrover01
+    use: systemd
+  become: true
+
+- name: Update /etc/hosts with agro hostname
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s+.*'
+    line: '127.0.1.1 agrobrover01'
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+
+- name: Install agro final apt dependencies
+  ansible.builtin.apt:
+    name:
+      - python3-pip
+      - python3-opencv
+      - python3-numpy
+      - python3-matplotlib
+      - python3-pil
+      - python3-yaml
+      - python3-tqdm
+      - python3-psutil
+      - python3-requests
+      - python3-scipy
+      - python3-pandas
+    state: present
+    update_cache: true
+  become: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Install PyTorch CPU packages for pi user
+  ansible.builtin.pip:
+    name:
+      - torch==2.10.0+cpu
+      - torchvision==0.25.0+cpu
+    extra_args: >-
+      --user
+      --break-system-packages
+      --no-cache-dir
+      --extra-index-url https://download.pytorch.org/whl/cpu
+  become: true
+  become_user: pi
+
+- name: Install agro Python packages for pi user
+  ansible.builtin.pip:
+    name:
+      - ultralytics==8.4.115
+      - ultralytics-thop==2.1.6
+      - polars==1.43.2
+      - polars-runtime-32==1.43.2
+      - nvidia-ml-py
+      - PyYAML==6.0.3
+    extra_args: >-
+      --user
+      --break-system-packages
+      --no-cache-dir
+      --no-deps
+  become: true
+  become_user: pi
+
+- name: Ensure ros2_ws/src directory exists
+  ansible.builtin.file:
+    path: /home/pi/ros2_ws/src
+    state: directory
+    mode: '0755'
+    owner: pi
+    group: pi
+  become: true
+  become_user: pi
+
+- name: Switch brover_web to agro final branch
+  ansible.builtin.git:
+    repo: https://github.com/voltbro/brover_web.git
+    dest: /home/pi/ros2_ws/src/brover_web
+    version: agro/final2026
+    force: true
+  become: true
+  become_user: pi
+
+- name: Clone or update brover_py package
+  ansible.builtin.git:
+    repo: https://github.com/NikolayIvanovWS/brover_py.git
+    dest: /home/pi/ros2_ws/src/brover_py
+    version: main
+  become: true
+  become_user: pi
+
+- name: Clone or update brover_recognizer package
+  ansible.builtin.git:
+    repo: https://github.com/NikolayIvanovWS/brover_recognizer.git
+    dest: /home/pi/ros2_ws/src/brover_recognizer
+    version: main
+  become: true
+  become_user: pi
+
+- name: Build brover_py package
+  ansible.builtin.shell:
+    chdir: /home/pi/ros2_ws
+    cmd: |
+      source /opt/ros/jazzy/setup.bash
+      if [ -f /home/pi/ros2_ws/install/setup.bash ]; then
+        source /home/pi/ros2_ws/install/setup.bash
+      fi
+      colcon build --packages-select brover_py
+    executable: /bin/bash
+  become: true
+  become_user: pi
+  async: 1800
+  poll: 30
+
+- name: Build brover_recognizer package
+  ansible.builtin.shell:
+    chdir: /home/pi/ros2_ws
+    cmd: |
+      source /opt/ros/jazzy/setup.bash
+      source /home/pi/ros2_ws/install/setup.bash
+      colcon build --packages-select brover_recognizer
+    executable: /bin/bash
+  become: true
+  become_user: pi
+  async: 1800
+  poll: 30
+
+- name: Flush filesystem buffers
+  ansible.builtin.command: sync
+  become: true
+
+- name: Reboot host
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+  become: true

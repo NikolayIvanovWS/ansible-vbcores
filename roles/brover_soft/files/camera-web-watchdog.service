@@ -1,0 +1,9 @@
+[Unit]
+Description=Check ROS camera stream served by web_video_server
+After=ros_nodes.service camera.service
+
+[Service]
+Type=oneshot
+User=pi
+ExecStart=/usr/local/bin/camera_web_watchdog.sh
+TimeoutStartSec=150

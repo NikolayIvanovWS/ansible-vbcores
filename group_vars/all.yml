@@ -4,7 +4,7 @@
 rosname: "jazzy"
 ubuntu_name: "noble"
 
-image_version: "broverOS_v2.6"
+image_version: "broverOS_v2.7"
 
 swap_vars:
   size: 1G
@@ -17,8 +17,6 @@ clear_dirs:
   - "/home/pi/.ros/log"
   - "/home/pi/.ansible"
   - "/home/pi/.cache"
-  - "/home/pi/ros2_ws/build"     
 
 clear_colcon_dirs:
   - "/home/pi/ros2_ws/log"
-

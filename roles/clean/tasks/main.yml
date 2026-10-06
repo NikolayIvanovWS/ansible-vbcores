@@ -29,12 +29,6 @@
     state: absent
   with_items: "{{ clear_dirs }}"
 
-- name: Remove brover selftest reports
-  ansible.builtin.file:
-    path: /home/pi/brover_selftest_reports
-    state: absent
-  become: true
-
 - name: Restore firstboot script for final image
   ansible.builtin.copy:
     src: scripts/firstboot.sh
@@ -68,35 +62,61 @@
 
 # --- Новые задачи для чистоты образа ---
 
-- name: Remove bash history
-  ansible.builtin.file:
-    path: /home/pi/.bash_history
-    state: absent
-  become: true
-
-- name: Remove SSH host keys
+- name: Remove shell history files
   ansible.builtin.file:
     path: "{{ item }}"
     state: absent
   loop:
-    - /etc/ssh/ssh_host_rsa_key
-    - /etc/ssh/ssh_host_rsa_key.pub
-    - /etc/ssh/ssh_host_ecdsa_key
-    - /etc/ssh/ssh_host_ecdsa_key.pub
-    - /etc/ssh/ssh_host_ed25519_key
-    - /etc/ssh/ssh_host_ed25519_key.pub
+    - /home/pi/.bash_history
+    - /home/pi/.zsh_history
+    - /home/pi/.python_history
+    - /root/.bash_history
+    - /root/.zsh_history
+    - /root/.python_history
+    - /home/pi/.sudo_as_admin_successful
   become: true
 
-- name: Regenerate SSH host keys
+- name: Remove user caches
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /home/pi/.cache
+    - /home/pi/.copilot
+    - /home/pi/.ansible_async
+    - /root/.cache
+    - /home/pi/.local/share/pip
+    - /root/.local/share/pip
+    - /root/.ros
   become: true
-  ansible.builtin.shell: ssh-keygen -A
+
+- name: Clean temporary directories
+  ansible.builtin.shell: |
+    find /tmp /var/tmp -xdev -mindepth 1 -maxdepth 1 \
+      ! -name 'ansible_*' \
+      ! -name 'ansible-*' \
+      ! -name 'systemd-private-*' \
+      -exec rm -rf -- {} + || true
+  args:
+    executable: /bin/bash
   changed_when: false
-
-- name: Restart SSH service
   become: true
-  ansible.builtin.systemd:
-    name: ssh
-    state: restarted
+
+- name: Remove rotated log files
+  ansible.builtin.shell: |
+    find /var/log -xdev -type f \( -name '*.gz' -o -name '*.old' -o -regex '.*\.[0-9]+' \) -delete
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become: true
+
+- name: Truncate remaining log files
+  ansible.builtin.shell: |
+    find /var/log -xdev -type f -exec truncate -s 0 {} +
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become: true
 
 - name: Reset machine-id
   ansible.builtin.shell: |
@@ -122,11 +142,32 @@
 
 # --- Завершающие задачи ---
 
-- name: Flush filesystem buffers
-  ansible.builtin.command: sync
+- name: Finalize SSH cleanup and schedule reboot
+  ansible.builtin.shell: |
+    rm -f \
+      /home/pi/.ssh/known_hosts \
+      /home/pi/.ssh/known_hosts.old \
+      /home/pi/.ssh/authorized_keys \
+      /home/pi/.ssh/id_rsa \
+      /home/pi/.ssh/id_rsa.pub \
+      /home/pi/.ssh/id_ed25519 \
+      /home/pi/.ssh/id_ed25519.pub \
+      /home/pi/.ssh/id_ecdsa \
+      /home/pi/.ssh/id_ecdsa.pub \
+      /root/.ssh/known_hosts \
+      /root/.ssh/known_hosts.old \
+      /root/.ssh/authorized_keys \
+      /root/.ssh/id_rsa \
+      /root/.ssh/id_rsa.pub \
+      /root/.ssh/id_ed25519 \
+      /root/.ssh/id_ed25519.pub \
+      /root/.ssh/id_ecdsa \
+      /root/.ssh/id_ecdsa.pub
+    ssh-keygen -A
+    systemctl enable ssh
+    sync
+    nohup sh -c 'sleep 2; systemctl reboot' >/dev/null 2>&1 &
+  args:
+    executable: /bin/bash
   become: true
-
-- name: Reboot host
-  ansible.builtin.reboot:
-    reboot_timeout: 600
-  become: true
+  changed_when: true

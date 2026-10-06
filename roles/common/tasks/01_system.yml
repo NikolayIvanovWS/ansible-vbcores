@@ -15,6 +15,13 @@
     password: "{{ pi_password }}"
     generate_ssh_key: yes
 
+- name: Add pi user to video group
+  ansible.builtin.user:
+    name: pi
+    groups: video
+    append: true
+  become: true
+
 - name: Update and upgrade apt packages
   become: true
   ansible.builtin.apt:
@@ -86,10 +93,10 @@
     group: pi  
   become: true   
 
-- name: Copy change_hostname.sh to pi home directory
+- name: Copy change_pi_params.sh to pi home directory
   copy:
-    src: change_hostname.sh
-    dest: /home/pi/change_hostname.sh
+    src: change_pi_params.sh
+    dest: /home/pi/change_pi_params.sh
     owner: pi
     group: pi
     mode: '0755'

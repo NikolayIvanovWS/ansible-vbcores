@@ -120,6 +120,6 @@ source /home/pi/.ros_params
 export PATH=$PATH:/home/pi/.local/bin
 source /home/pi/.yakut_params
 export CYPHAL_PATH="$HOME/.pycyphal:$CYPHAL_PATH"
-export PYTHONPATH="$PYTHONPATH:/home/pi/.local/lib/python3.12/site-packages:/home/pi/.pycyphal"
+export PYTHONPATH="$PYTHONPATH:/home/pi/.pycyphal"
 source /home/pi/ros2_ws/install/local_setup.bash
 PROMPT_COMMAND='history -a; history -n;'
