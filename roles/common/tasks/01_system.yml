@@ -55,7 +55,7 @@
 
 - name: Set a hostname 
   ansible.builtin.hostname:
-    name: "{{inventory_hostname}}"
+    name: "{{ common_hostname }}"
     use: systemd         
 
 - name: Update hostname /etc/hosts

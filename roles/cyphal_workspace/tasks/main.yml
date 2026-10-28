@@ -1,0 +1,40 @@
+---
+- name: Install standalone Cyphal bridge build dependencies
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - cmake
+      - libboost-all-dev
+      - "ros-{{ rosname }}-rclcpp"
+      - "ros-{{ rosname }}-rclcpp-components"
+      - "ros-{{ rosname }}-std-msgs"
+      - "ros-{{ rosname }}-sensor-msgs"
+      - "ros-{{ rosname }}-nav-msgs"
+      - "ros-{{ rosname }}-diagnostic-msgs"
+      - "ros-{{ rosname }}-rosidl-default-generators"
+      - "ros-{{ rosname }}-rosidl-default-runtime"
+    state: present
+    update_cache: true
+  become: true
+
+- import_tasks: sources.yml
+
+- name: Build standalone Cyphal bridge
+  ansible.builtin.shell:
+    chdir: /home/pi/ros2_ws
+    cmd: |
+      set -e
+      source /opt/ros/{{ rosname }}/setup.bash
+      colcon build --packages-up-to cyphal_ros2_bridge
+    executable: /bin/bash
+  become: true
+  become_user: pi
+  async: 1800
+  poll: 30
+
+- name: Load workspace in interactive shells
+  ansible.builtin.lineinfile:
+    path: /home/pi/.bashrc
+    line: source /home/pi/ros2_ws/install/local_setup.bash
+  become: true
+  become_user: pi

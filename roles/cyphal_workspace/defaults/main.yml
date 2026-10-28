@@ -1,0 +1,3 @@
+---
+# HEAD preserves the upstream default used by the rover playbook.
+cyphal_bridge_version: HEAD

@@ -1,0 +1,26 @@
+---
+- name: Prepare universal VBCores onboard computer
+  hosts: canhat
+  become: true
+  vars:
+    common_hostname: ros2vbcores
+    image_version: vbcoresOS_v1.0
+    network_wifi_fallback_ssid: "{{ common_hostname }}"
+    network_wifi_fallback_dependent_services: fastdds
+  roles:
+    - role: common
+      tags: [common]
+    - role: ros2
+      tags: [ros2]
+    - role: canhat
+      tags: [canhat]
+    - role: vscode
+      tags: [vscode]
+    - role: network-fallback
+      tags: [network-fallback]
+    - role: network-wifi-fallback
+      tags: [network-wifi-fallback]
+    - role: cyphal_workspace
+      tags: [cyphal_workspace]
+    - role: onboard_profile
+      tags: [onboard_profile]
