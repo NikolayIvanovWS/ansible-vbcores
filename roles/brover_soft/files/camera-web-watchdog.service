@@ -6,3 +6,4 @@ After=ros_nodes.service camera.service
 Type=oneshot
 User=pi
 ExecStart=/usr/local/bin/camera_web_watchdog.sh
+TimeoutStartSec=150

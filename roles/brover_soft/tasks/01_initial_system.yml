@@ -17,6 +17,24 @@
   environment:
     DEBIAN_FRONTEND: noninteractive
 
+- name: Install latest transforms3d for NumPy compatibility
+  ansible.builtin.pip:
+    name: transforms3d
+    state: latest
+    executable: pip3
+    extra_args: "--user --break-system-packages"
+  become: true
+  become_user: pi
+
+- name: Install latest headless OpenCV for Python image processing
+  ansible.builtin.pip:
+    name: opencv-python-headless
+    state: latest
+    executable: pip3
+    extra_args: "--user --break-system-packages --only-binary=:all:"
+  become: true
+  become_user: pi
+
 - name: Set hostname to brover01
   ansible.builtin.hostname:
     name: brover01
