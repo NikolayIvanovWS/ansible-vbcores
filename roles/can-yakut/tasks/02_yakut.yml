@@ -155,11 +155,11 @@
         import numpy, scipy, pycyphal;
         from scipy.sparse import dok_matrix;
         print(f"NumPy {numpy.__version__}, SciPy {scipy.__version__}, PyCyphal {pycyphal.__version__}")
-  register: canhat_yakut_stack_check
+  register: can_yakut_stack_check
   changed_when: false
   become: true
   become_user: pi
 
 - name: Show Yakut scientific stack versions
   ansible.builtin.debug:
-    msg: "{{ canhat_yakut_stack_check.stdout }}"
+    msg: "{{ can_yakut_stack_check.stdout }}"

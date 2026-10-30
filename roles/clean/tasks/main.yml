@@ -53,13 +53,6 @@
     mode: '0644'
   become: true
 
-- name: Enable firstboot service for next boot
-  ansible.builtin.systemd:
-    name: firstboot
-    enabled: true
-    daemon_reload: true
-  become: true
-
 # --- Новые задачи для чистоты образа ---
 
 - name: Remove shell history files
@@ -142,7 +135,56 @@
 
 # --- Завершающие задачи ---
 
-- name: Finalize SSH cleanup and schedule reboot
+- name: Enable firstboot service for the copied image
+  ansible.builtin.systemd:
+    name: firstboot
+    enabled: true
+    daemon_reload: true
+  become: true
+
+- name: Check whether the EEPROM power setup service is installed
+  ansible.builtin.stat:
+    path: /etc/systemd/system/vbcores-psu-current-firstboot.service
+  register: clean_eeprom_power_service
+  become: true
+
+- name: Refresh EEPROM power setup script for the copied image
+  ansible.builtin.copy:
+    src: "{{ role_path }}/../can-yakut/files/power/vbcores-psu-current-firstboot.py"
+    dest: /usr/local/sbin/vbcores-psu-current-firstboot
+    owner: root
+    group: root
+    mode: '0755'
+  when: clean_eeprom_power_service.stat.exists
+  become: true
+
+- name: Refresh EEPROM power setup service for the copied image
+  ansible.builtin.copy:
+    src: "{{ role_path }}/../can-yakut/files/power/vbcores-psu-current-firstboot.service"
+    dest: /etc/systemd/system/vbcores-psu-current-firstboot.service
+    owner: root
+    group: root
+    mode: '0644'
+  when: clean_eeprom_power_service.stat.exists
+  become: true
+
+- name: Clear EEPROM power setup completion marker from the source device
+  ansible.builtin.file:
+    path: /var/lib/vbcores-psu-current/checked-serial
+    state: absent
+  when: clean_eeprom_power_service.stat.exists
+  become: true
+
+- name: Enable EEPROM power setup for the copied image
+  ansible.builtin.systemd_service:
+    name: vbcores-psu-current-firstboot.service
+    enabled: true
+    state: stopped
+    daemon_reload: true
+  when: clean_eeprom_power_service.stat.exists
+  become: true
+
+- name: Finalize SSH cleanup and schedule poweroff
   ansible.builtin.shell: |
     rm -f \
       /home/pi/.ssh/known_hosts \
@@ -163,10 +205,10 @@
       /root/.ssh/id_ed25519.pub \
       /root/.ssh/id_ecdsa \
       /root/.ssh/id_ecdsa.pub
-    ssh-keygen -A
+    rm -f /etc/ssh/ssh_host_*_key /etc/ssh/ssh_host_*_key.pub
     systemctl enable ssh
     sync
-    nohup sh -c 'sleep 2; systemctl reboot' >/dev/null 2>&1 &
+    systemd-run --unit=vbcores-image-poweroff --on-active=30s /usr/bin/systemctl poweroff
   args:
     executable: /bin/bash
   become: true

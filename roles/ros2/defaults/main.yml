@@ -1,0 +1,7 @@
+---
+ros2_extra_packages:
+  - ros-jazzy-demo-nodes-cpp
+  - ros-jazzy-demo-nodes-py
+  - ros-jazzy-joint-state-publisher
+  - ros-jazzy-robot-state-publisher
+  - ros-jazzy-xacro

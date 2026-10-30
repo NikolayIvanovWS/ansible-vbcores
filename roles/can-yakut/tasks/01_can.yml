@@ -1,0 +1,38 @@
+---
+- name: Configure CAN shield overlay
+  ansible.builtin.blockinfile:
+    marker: "# {mark} ANSIBLE MANAGED BLOCK (CAN)"
+    path: /boot/firmware/config.txt
+    block: |
+      dtparam=spi=on
+      dtoverlay=seeed-can-fd-hat-v2
+  become: true
+
+- name: Install CAN and Yakut system dependencies
+  ansible.builtin.apt:
+    name:
+      - iproute2
+      - udev
+      - python3-pip
+      - python3-cffi
+      - python3-venv
+      - can-utils
+    state: present
+  become: true
+
+- name: Install CAN initialization rule
+  ansible.builtin.copy:
+    src: 80-can.rules
+    dest: /etc/udev/rules.d/80-can.rules
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+
+- name: Reload udev rules for subsequent device additions
+  ansible.builtin.command: udevadm control --reload-rules
+  changed_when: false
+  become: true
+
+# Do not trigger add events on running CAN interfaces: changing bitrates while
+# UP can fail and interrupt applications. The role reboots in 04_reboot.yml.

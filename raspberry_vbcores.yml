@@ -1,10 +1,11 @@
 ---
 - name: Prepare universal VBCores onboard computer
-  hosts: canhat
+  hosts: vbcores
   become: true
   vars:
-    common_hostname: ros2vbcores
+    common_hostname: vbcores01
     image_version: vbcoresOS_v1.0
+    ros2_extra_packages: []
     network_wifi_fallback_ssid: "{{ common_hostname }}"
     network_wifi_fallback_dependent_services: fastdds
   roles:
@@ -12,15 +13,16 @@
       tags: [common]
     - role: ros2
       tags: [ros2]
-    - role: canhat
-      tags: [canhat]
-    - role: vscode
-      tags: [vscode]
+    - role: can-yakut
+      tags: [can-yakut]
     - role: network-fallback
       tags: [network-fallback]
     - role: network-wifi-fallback
       tags: [network-wifi-fallback]
-    - role: cyphal_workspace
-      tags: [cyphal_workspace]
-    - role: onboard_profile
-      tags: [onboard_profile]
+  tasks:
+    - name: Mark the universal onboard image
+      ansible.builtin.lineinfile:
+        path: /etc/os-release
+        regexp: '^IMAGE_VERSION='
+        line: 'IMAGE_VERSION="{{ image_version }}"'
+      tags: [image_version]

@@ -14,22 +14,152 @@
       mode: 0644  
     become: true   
 
-- name: Remove apt apps
-  ansible.builtin.apt:
+- name: Remove installed snaps in dependency order
+  ansible.builtin.script: scripts/remove_snaps.py
+  args:
+    executable: /usr/bin/python3
+  register: common_snap_removal
+  changed_when: "'Removed snap:' in common_snap_removal.stdout"
+  when: not ansible_check_mode
+
+- name: Discover installed systemd units including timers and sockets
+  ansible.builtin.command: systemctl list-unit-files --no-legend --no-pager
+  register: common_unit_files
+  changed_when: false
+  check_mode: false
+
+- name: Record installed unit names
+  ansible.builtin.set_fact:
+    common_units: "{{ common_unit_files.stdout_lines | map('split') | map('first') | list }}"
+
+- name: Stop and disable residual snap units
+  ansible.builtin.systemd:
     name: "{{ item }}"
-    state: absent    
-    autoclean: true   
-  with_items:
-    - "snapd"   
-    - "cloud-init"
-  
-- name: Delete not needed dirs
+    state: stopped
+    enabled: false
+  loop: "{{ common_units | select('match', '^snap[.-].*\\.(service|socket|timer|mount)$') | list }}"
+
+- name: Discover residual snap mounts
+  ansible.builtin.command: findmnt --json --list --output TARGET
+  register: common_mounts
+  changed_when: false
+  check_mode: false
+
+- name: Unmount remaining snap filesystems before removing their data
+  ansible.builtin.command:
+    argv:
+      - umount
+      - "{{ item }}"
+  loop: "{{ (common_mounts.stdout | from_json).filesystems | map(attribute='target') | select('match', '^/snap/') | sort(reverse=true) | list }}"
+
+- name: Purge snap cloud initialization and VMware guest tools
+  ansible.builtin.apt:
+    name:
+      - snapd
+      - cloud-init
+      - open-vm-tools
+    state: absent
+    purge: true
+
+- name: Remove obsolete local snap unit files
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item }}"
+    state: absent
+  loop: "{{ common_units | select('match', '^snap[.-].*\\.(service|socket|timer|mount)$') | list }}"
+
+- name: Remove residual snap and cloud data
   ansible.builtin.file:
     path: "{{ item }}"
-    state: "absent"
-  with_items:
-     - /etc/cloud/
-     - /var/lib/cloud/    
+    state: absent
+  loop:
+    - /var/snap
+    - /var/lib/snapd
+    - /var/cache/snapd
+    - /home/pi/snap
+    - /root/snap
+    - /etc/cloud
+    - /var/lib/cloud
+
+- name: Reload systemd after package removal
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Disable background collection and scheduled updates
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop: "{{ common_background_units | intersect(common_units) }}"
+  vars:
+    common_background_units:
+      - apport.service
+      - apport-autoreport.path
+      - apport-autoreport.timer
+      - apport-autoreport.service
+      - apport-forward.socket
+      - apt-daily.timer
+      - apt-daily-upgrade.timer
+      - sysstat.service
+      - sysstat-collect.service
+      - sysstat-summary.service
+      - sysstat-rotate.service
+      - sysstat-collect.timer
+      - sysstat-summary.timer
+      - sysstat-rotate.timer
+      - fwupd-refresh.timer
+
+- name: Disable and mask local console setup without disabling login consoles
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+    masked: true
+  loop: "{{ ['keyboard-setup.service', 'console-setup.service', 'setvtrgb.service'] | intersect(common_units) }}"
+
+- name: Inspect storage technologies and persistent configuration
+  ansible.builtin.script: scripts/storage_features.py
+  args:
+    executable: /usr/bin/python3
+  register: common_storage_probe
+  changed_when: false
+  check_mode: false
+
+- name: Record storage features
+  ansible.builtin.set_fact:
+    common_storage: "{{ common_storage_probe.stdout | from_json }}"
+
+- name: Disable LVM maintenance only when no LVM configuration is present
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop: "{{ ['e2scrub_all.timer', 'e2scrub_reap.service', 'lvm2-monitor.service'] | intersect(common_units) }}"
+  when: not common_storage.lvm
+
+- name: Disable RAID checks only when no RAID configuration is present
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop: "{{ ['mdcheck_start.timer', 'mdcheck_continue.timer', 'mdmonitor-oneshot.timer'] | intersect(common_units) }}"
+  when: not common_storage.raid
+
+- name: Disable iSCSI activation only when no persistent sessions are configured
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop: "{{ ['open-iscsi.service', 'iscsid.socket'] | intersect(common_units) }}"
+  when: not common_storage.iscsi
+
+- name: Disable XFS scrub timer only when no XFS configuration is present
+  ansible.builtin.systemd:
+    name: xfs_scrub_all.timer
+    enabled: false
+    state: stopped
+  when:
+    - not common_storage.xfs
+    - "'xfs_scrub_all.timer' in common_units"
 
 - name: Get linux-modules packages
   ansible.builtin.shell: dpkg-query --show 'linux-modules-*' | cut -f1 | grep -v "$(uname -r)"

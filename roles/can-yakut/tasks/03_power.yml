@@ -1,0 +1,34 @@
+---
+- name: Install Raspberry Pi EEPROM configuration utility
+  ansible.builtin.apt:
+    name:
+      - rpi-eeprom
+      - flashrom
+    state: present
+  become: true
+
+- name: Install first-boot EEPROM power setup script
+  ansible.builtin.copy:
+    src: power/vbcores-psu-current-firstboot.py
+    dest: /usr/local/sbin/vbcores-psu-current-firstboot
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+
+- name: Install first-boot EEPROM power setup service
+  ansible.builtin.copy:
+    src: power/vbcores-psu-current-firstboot.service
+    dest: /etc/systemd/system/vbcores-psu-current-firstboot.service
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+
+- name: Keep EEPROM power setup service stopped until image finalization
+  ansible.builtin.systemd_service:
+    name: vbcores-psu-current-firstboot.service
+    enabled: false
+    state: stopped
+    daemon_reload: true
+  become: true

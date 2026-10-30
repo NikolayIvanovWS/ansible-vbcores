@@ -1,0 +1,5 @@
+---
+- import_tasks: 01_can.yml
+- import_tasks: 02_yakut.yml
+- import_tasks: 03_power.yml
+- import_tasks: 04_reboot.yml

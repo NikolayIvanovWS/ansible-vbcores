@@ -1,4 +1,7 @@
-[canhat]
+[brover]
+ubuntu24common ansible_host=192.168.1.41 ansible_ssh_user=pi ansible_ssh_pass=brobro ansible_sudo_pass=brobro ansible_become=yes ansible_become_method=sudo
+
+[vbcores]
 ubuntu24common ansible_host=192.168.1.41 ansible_ssh_user=pi ansible_ssh_pass=brobro ansible_sudo_pass=brobro ansible_become=yes ansible_become_method=sudo
 
 [clean]

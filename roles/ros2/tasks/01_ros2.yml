@@ -69,12 +69,7 @@
   ansible.builtin.apt:
     name: "{{ item }}"
     state: present
-  loop:
-    - ros-jazzy-demo-nodes-cpp
-    - ros-jazzy-demo-nodes-py
-    - ros-jazzy-joint-state-publisher
-    - ros-jazzy-robot-state-publisher
-    - ros-jazzy-xacro
+  loop: "{{ ros2_extra_packages }}"
 
 # - name: Initialize rosdep
 #   ansible.builtin.shell:

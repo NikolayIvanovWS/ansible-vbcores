@@ -35,9 +35,9 @@
   become: true
   become_user: pi
 
-- name: Set hostname to brover01
+- name: Set rover hostname
   ansible.builtin.hostname:
-    name: brover01
+    name: "{{ common_hostname }}"
     use: systemd
   become: true
 
@@ -45,7 +45,7 @@
   ansible.builtin.lineinfile:
     path: /etc/hosts
     regexp: '^127\.0\.1\.1\s+.*'
-    line: '127.0.1.1 brover01'
+    line: '127.0.1.1 {{ common_hostname }}'
     owner: root
     group: root
     mode: '0644'
@@ -54,6 +54,7 @@
 - name: Add IMAGE_VERSION to /etc/os-release
   ansible.builtin.lineinfile:
     path: /etc/os-release
+    regexp: '^IMAGE_VERSION='
     line: 'IMAGE_VERSION="{{ image_version }}"'
     state: present
   become: true

@@ -1,0 +1,11 @@
+[Unit]
+Description=Configure Raspberry Pi 5 EEPROM for the VBCores 5 A CAN FD HAT
+After=local-fs.target firstboot.service
+ConditionPathExists=/proc/device-tree/model
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/vbcores-psu-current-firstboot
+
+[Install]
+WantedBy=multi-user.target

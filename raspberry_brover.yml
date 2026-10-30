@@ -1,24 +1,27 @@
 ---
-- hosts: canhat
+- hosts: brover
+  vars:
+    common_hostname: brover01
+    image_version: broverOS_v2.8
   roles:
 
-  - role: common  
+  - role: common
     tags: [common]
 
-  - role: ros2  
+  - role: ros2
     tags: [ros2]
 
-  - role: canhat  
-    tags: [canhat] 
-  
-  - role: vscode  
+  - role: can-yakut
+    tags: [can-yakut]
+
+  - role: vscode
     tags: [vscode]
 
-  - role: network-fallback  
+  - role: network-fallback
     tags: [network-fallback]
 
   - role: network-wifi-fallback
     tags: [network-wifi-fallback]
-     
-  - role: brover_soft 
+
+  - role: brover_soft
     tags: [brover_soft]
